@@ -66,7 +66,7 @@
     }
     .social-btn:hover { color: var(--red); }
 
-    /* ================= HEADER ================= */
+    /* ================= HEADER & LOGO DINÁMICO ================= */
     header {
       position: sticky;
       top: 0;
@@ -74,7 +74,7 @@
       background: rgba(9, 10, 15, 0.95);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
+      padding: 12px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -82,14 +82,27 @@
     .brand-container {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
-    .brand-badge {
+    #brandLogoContainer {
+      display: flex;
+      align-items: center;
+      min-height: 38px;
+    }
+    .logo-box {
       background: var(--red);
       color: white;
       font-weight: 800;
       font-size: 13px;
-      padding: 4px 8px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .brand-logo-img {
+      height: 40px;
+      max-width: 140px;
+      object-fit: contain;
+      display: block;
       border-radius: 4px;
     }
     .brand-title {
@@ -157,31 +170,32 @@
       color: #cbd5e1;
     }
 
-    /* ================= GRID & TARJETAS: TIPO / TÍTULO / NOTA / IMAGEN ================= */
+    /* ================= GRID & TARJETAS DE NOTICIAS ================= */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
       gap: 24px;
       margin-bottom: 45px;
     }
     .news-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 20px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: transform 0.2s ease, border-color 0.2s ease;
+      position: relative;
     }
     .news-card:hover {
       transform: translateY(-3px);
       border-color: rgba(220, 38, 38, 0.4);
     }
 
-    /* 1. Tipo de Noticia */
+    /* 1. Encabezado de la noticia (Tipo + Título) */
     .news-header {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .news-tag {
       display: inline-block;
@@ -190,13 +204,11 @@
       text-transform: uppercase;
       padding: 4px 10px;
       border-radius: 4px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       background: rgba(220, 38, 38, 0.15);
       color: #fca5a5;
       letter-spacing: 0.5px;
     }
-
-    /* 2. Titulo de la Noticia */
     .news-title {
       font-size: 18px;
       font-weight: 800;
@@ -205,36 +217,57 @@
       white-space: pre-line;
     }
 
-    /* 3. Noticia */
-    .news-body {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 16px;
-      flex-grow: 1;
-      white-space: pre-line;
+    /* 2. Cuerpo de la noticia con IMAGEN DE FONDO (debajo del título) */
+    .news-body-container {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 250px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
     }
 
-    /* 4. Imagen */
-    .news-image-wrapper {
-      width: 100%;
-      height: 200px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #0d1017;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .news-image-wrapper img {
+    /* Capa de contraste oscuro para legibilidad perfecta */
+    .news-body-overlay {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.3s ease;
+      background: linear-gradient(180deg, 
+        rgba(9, 11, 17, 0.65) 0%, 
+        rgba(9, 11, 17, 0.88) 45%, 
+        rgba(9, 11, 17, 0.98) 100%
+      );
+      backdrop-filter: blur(2px);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
     }
-    .news-card:hover .news-image-wrapper img {
-      transform: scale(1.04);
+
+    /* Texto de la noticia sobre el fondo */
+    .news-body-text {
+      font-size: 14px;
+      color: #f1f5f9;
+      line-height: 1.6;
+      white-space: pre-line;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    /* Scrollbar sutil para textos largos */
+    .news-body-text::-webkit-scrollbar {
+      width: 4px;
+    }
+    .news-body-text::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
     }
 
     /* HORARIOS */
@@ -383,10 +416,13 @@
     </div>
   </div>
 
-  <!-- HEADER -->
+  <!-- HEADER (LOGO DINÁMICO DESDE GOOGLE SHEETS) -->
   <header>
     <div class="brand-container">
-      <span class="brand-badge">BTV</span>
+      <div id="brandLogoContainer">
+        <!-- Logo cargado dinámicamente desde el Google Sheet o fallback BTV -->
+        <div class="logo-box">BTV</div>
+      </div>
       <span class="brand-title">BARINAS TV</span>
     </div>
     <nav>
@@ -407,7 +443,7 @@
       <div class="ad-content">Anúnciate aquí con Barinas TV &bull; Cobertura en todo el Estado</div>
     </div>
 
-    <!-- SECCIÓN INFORMATIVO BTV (CONEXIÓN EXACTA A GOOGLE SHEETS) -->
+    <!-- SECCIÓN INFORMATIVO BTV (CON FONDO DE NOTICIA DINÁMICO) -->
     <section id="informativo-btv">
       <div class="section-header">
         <h2 class="section-title">Informativo BTV</h2>
@@ -428,9 +464,10 @@
             <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
             <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
           </div>
-          <p class="news-body">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional.</p>
-          <div class="news-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80" loading="lazy" referrerpolicy="no-referrer">
+          <div class="news-body-container" style="background-image: url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80');">
+            <div class="news-body-overlay">
+              <p class="news-body-text">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional y fortalecer la economía de los pequeños y medianos productores.</p>
+            </div>
           </div>
         </article>
       </div>
@@ -453,9 +490,10 @@
             <span class="news-tag">Matutino</span>
             <h3 class="news-title">El Mañanero Llanero</h3>
           </div>
-          <p class="news-body">Entrevistas de actualidad, café y la mejor música de los llanos.</p>
-          <div class="news-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80" loading="lazy" referrerpolicy="no-referrer">
+          <div class="news-body-container" style="background-image: url('https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80');">
+            <div class="news-body-overlay">
+              <p class="news-body-text">Entrevistas de actualidad, café y la mejor música de los llanos venezolanos para comenzar el día con la mejor información.</p>
+            </div>
           </div>
         </article>
       </div>
@@ -506,35 +544,38 @@
     </div>
   </div>
 
-  <!-- SCRIPT CON PARSER ESTRUCTURADO Y RESOLUCIÓN DE IMAGEN -->
+  <!-- SCRIPT CON LOGO Y NOTICIAS VINCULADOS A GOOGLE SHEETS -->
   <script>
-    // TU HOJA DE GOOGLE SHEETS
-    const SHEET_ID = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
-    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    // 1. ENLACES A TUS HOJAS DE GOOGLE SHEETS
+    const NOTICIAS_SHEET_ID = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
+    const LOGO_SHEET_ID     = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
 
-    // LIMPIADOR UNIVERSAL DE IMÁGENES
+    const GVIZ_NOTICIAS_URL = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_LOGO_URL     = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    // LIMPIADOR Y CONVERTIDOR UNIVERSAL DE IMÁGENES (DRIVE, DROPBOX, DIRECTAS)
     function procesarUrlImagen(rawUrl) {
       if (!rawUrl) return '';
       let str = String(rawUrl).trim();
 
-      // Extrae la URL limpia si tiene texto o comillas pegadas al final
+      // Extraer enlace https limpio si viene con comillas o texto
       const match = str.match(/https?:\/\/[^\s"'<>]+/i);
       if (!match) return '';
       let url = match[0];
 
-      // Si tiene texto pegado inmediatamente a la extensión (.pngokey -> .png)
+      // Eliminar texto sobrante pegado a la extensión (.pngokey -> .png)
       const extMatch = url.match(/^(https?:\/\/.*?\.(?:png|jpg|jpeg|webp|avif|gif|svg|bmp))/i);
       if (extMatch) {
         url = extMatch[1];
       }
 
-      // Conversión de Google Drive a enlace directo
+      // Convertir Google Drive a imagen directa
       const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
       if (driveMatch && driveMatch[1]) {
         return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
       }
 
-      // Conversión de Dropbox
+      // Dropbox
       if (url.includes('dropbox.com')) {
         return url.replace('?dl=0', '?raw=1').replace('&dl=0', '&raw=1');
       }
@@ -542,13 +583,45 @@
       return url;
     }
 
-    // CARGA DE DATOS MEDIANTE JSON NATIVO DE GOOGLE
+    // ================= CARGAR LOGO DESDE GOOGLE SHEETS =================
+    async function cargarLogoDesdeSheet() {
+      try {
+        const response = await fetch(GVIZ_LOGO_URL);
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        if (data.table && data.table.rows && data.table.rows.length > 0) {
+          let logoFinal = '';
+
+          // Recorre las filas buscando la primera celda con URL
+          for (const row of data.table.rows) {
+            if (!row.c) continue;
+            for (const cell of row.c) {
+              const val = (cell?.v ?? '').toString().trim();
+              if (val.includes('http') || val.includes('drive.google.com')) {
+                logoFinal = procesarUrlImagen(val);
+                break;
+              }
+            }
+            if (logoFinal) break;
+          }
+
+          if (logoFinal) {
+            document.getElementById('brandLogoContainer').innerHTML = 
+              `<img src="${logoFinal}" alt="Barinas TV Logo" class="brand-logo-img" referrerpolicy="no-referrer">`;
+          }
+        }
+      } catch (e) {
+        console.warn("Logo desde Sheet no disponible, manteniendo BTV por defecto:", e);
+      }
+    }
+
+    // ================= CARGAR NOTICIAS CON IMAGEN COMO FONDO =================
     async function cargarInformativoDesdeSheet() {
       try {
-        const response = await fetch(GVIZ_URL);
+        const response = await fetch(GVIZ_NOTICIAS_URL);
         const text = await response.text();
-
-        // Extrae el JSON devuelto por Google Visualization
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
         const data = JSON.parse(jsonString);
 
@@ -559,18 +632,15 @@
         }
 
         const rows = data.table.rows;
-        let colTipo = 0;
-        let colTitulo = 1;
-        let colNoticia = 2;
-        let colImagen = 3;
+        let colTipo = 0, colTitulo = 1, colNoticia = 2, colImagen = 3;
         let startIndex = 0;
 
-        // Detecta si la primera fila son los encabezados
+        // Detección automática de encabezados
         if (rows.length > 0 && rows[0].c) {
           const v0 = String(rows[0].c[0]?.v || '').toLowerCase();
           const v1 = String(rows[0].c[1]?.v || '').toLowerCase();
           if (v0.includes('tipo') || v1.includes('titulo')) {
-            startIndex = 1; // Salta la fila de encabezados
+            startIndex = 1;
           }
         }
 
@@ -584,7 +654,6 @@
           const noticia = (cells[colNoticia]?.v ?? '').toString().trim();
           const imagenRaw = (cells[colImagen]?.v ?? '').toString().trim();
 
-          // Si la fila no está vacía
           if (tipo || titulo || noticia) {
             noticias.push({
               tipo: tipo || 'Informativo',
@@ -597,13 +666,13 @@
 
         renderizarInformativoBTV(noticias);
       } catch (error) {
-        console.error("Error al cargar Google Sheets:", error);
+        console.error("Error al cargar noticias:", error);
         document.getElementById('gridInformativoBTV').innerHTML = 
-          `<div style="color:var(--text-muted); font-size:14px;">Hubo un problema al conectar con la hoja. Verifica que el enlace tenga acceso de lectura público.</div>`;
+          `<div style="color:var(--text-muted); font-size:14px;">No se pudo conectar a la hoja de cálculo. Verifica los permisos de acceso público.</div>`;
       }
     }
 
-    // RENDERIZADOR: TIPO DE NOTICIA -> TITULO -> NOTICIA -> IMAGEN
+    // RENDER: TÍTULO ARRIBA Y LA IMAGEN COMO FONDO DE LA NOTICIA (LEGIBLE)
     function renderizarInformativoBTV(items) {
       const container = document.getElementById('gridInformativoBTV');
       if (!items || items.length === 0) {
@@ -611,34 +680,31 @@
         return;
       }
 
-      const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&q=80";
+      const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
       container.innerHTML = items.map(item => {
-        const fotoFinal = item.imagen || imgPlaceholder;
+        const fotoFondo = item.imagen || imgPlaceholder;
         return `
           <article class="news-card">
-            <!-- 1. Tipo de Noticia -->
+            <!-- 1. TIPO Y TÍTULO (POR ENCIMA DEL FONDO) -->
             <div class="news-header">
               <span class="news-tag">${item.tipo}</span>
-              <!-- 2. Titulo de la Noticia -->
               <h3 class="news-title">${item.titulo}</h3>
             </div>
-            <!-- 3. Noticia -->
-            <p class="news-body">${item.noticia}</p>
-            <!-- 4. Imagen -->
-            <div class="news-image-wrapper">
-              <img 
-                src="${fotoFinal}" 
-                alt="${item.titulo}" 
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                onerror="this.onerror=null; this.src='${imgPlaceholder}';">
+            
+            <!-- 2. IMAGEN COMO BACKGROUND DEBAJO DEL TÍTULO (CON CAPA OSCURA DE ALTA LEGIBILIDAD) -->
+            <div class="news-body-container" style="background-image: url('${fotoFondo}');">
+              <div class="news-body-overlay">
+                <p class="news-body-text">${item.noticia}</p>
+              </div>
             </div>
           </article>
         `;
       }).join('');
     }
 
+    // Inicializar cargas
+    cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
 
     /* =========================================================================
