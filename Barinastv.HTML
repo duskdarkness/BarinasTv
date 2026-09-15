@@ -448,7 +448,7 @@
       padding-top: 30px;
     }
 
-    /* ================= HORARIOS (PARRILLA INTERACTIVA CON DÍAS) ================= */
+    /* ================= HORARIOS: PARRILLA DE PROGRAMACIÓN ================= */
     .schedule-days-tabs {
       display: flex;
       gap: 10px;
@@ -461,13 +461,14 @@
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      padding: 9px 20px;
+      padding: 10px 22px;
       border-radius: 99px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s ease;
+      letter-spacing: 0.5px;
     }
     .day-tab-btn:hover {
       color: #fff;
@@ -477,7 +478,7 @@
       background: var(--red);
       color: #fff;
       border-color: var(--red);
-      box-shadow: 0 0 16px rgba(220, 38, 38, 0.4);
+      box-shadow: 0 0 16px rgba(220, 38, 38, 0.45);
     }
 
     .schedule-list {
@@ -494,10 +495,11 @@
       border: 1px solid var(--border);
       padding: 16px 20px;
       border-radius: 10px;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s ease, transform 0.2s ease;
     }
     .schedule-item:hover {
       border-color: rgba(220, 38, 38, 0.4);
+      transform: translateX(4px);
     }
     .schedule-time-badge {
       min-width: 140px;
@@ -506,26 +508,29 @@
       font-weight: 800;
       font-size: 14px;
       color: var(--red);
-      background: rgba(220, 38, 38, 0.1);
-      padding: 5px 12px;
+      background: rgba(220, 38, 38, 0.12);
+      padding: 6px 14px;
       border-radius: 6px;
-      border: 1px solid rgba(220, 38, 38, 0.25);
+      border: 1px solid rgba(220, 38, 38, 0.3);
       display: inline-block;
+      letter-spacing: 0.5px;
     }
     .schedule-info {
       flex-grow: 1;
       margin-left: 20px;
     }
     .schedule-prog-title {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       color: #fff;
+      letter-spacing: 0.3px;
     }
     .schedule-day-label {
       color: var(--text-muted);
       font-size: 12px;
-      margin-top: 2px;
+      margin-top: 3px;
       display: block;
+      font-weight: 600;
     }
 
     /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
@@ -746,20 +751,20 @@
         </div>
       </section>
 
-      <!-- SECCIÓN HORARIOS (CONECTADA A GOOGLE SHEETS) -->
+      <!-- SECCIÓN HORARIOS (PARRILLA SEMANAL DE GOOGLE SHEETS) -->
       <section id="horarios">
         <div class="section-header">
           <h2 class="section-title">Horarios de Emisión</h2>
         </div>
 
-        <!-- Pestañas de Días de la Semana (Fila 5) -->
+        <!-- Pestañas de Días de la Semana (Lunes a Domingo) -->
         <div class="schedule-days-tabs" id="scheduleTabs">
-          <div style="font-size:13px; color:var(--text-muted);">Cargando días de programación...</div>
+          <div style="font-size:13px; color:var(--text-muted);">Cargando programación semanal...</div>
         </div>
 
         <!-- Lista de Programas del Día Seleccionado -->
         <div class="schedule-list" id="listHorarios">
-          <div style="font-size:13px; color:var(--text-muted);">Cargando parrilla horaria...</div>
+          <div style="font-size:13px; color:var(--text-muted);">Cargando parrilla...</div>
         </div>
       </section>
     </div>
@@ -830,21 +835,22 @@
 
   <!-- SCRIPTS -->
   <script>
-    // 4 HOJAS DE GOOGLE SHEETS CONECTADAS
+    // HOJAS DE GOOGLE SHEETS
     const NOTICIAS_SHEET_ID = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
     const LOGO_SHEET_ID     = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
     const REDES_SHEET_ID    = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
     const HORARIOS_SHEET_ID = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
+    const HORARIOS_GID      = "146301221";
 
     const GVIZ_NOTICIAS_URL = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_LOGO_URL     = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_REDES_URL    = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
-    const GVIZ_HORARIOS_URL = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_HORARIOS_URL = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${HORARIOS_GID}`;
 
     const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
     let noticiasGlobales = [];
-    let horariosGlobalesPorDia = {}; // Almacena la programación por día
+    let horariosGlobalesPorDia = {};
 
     function procesarUrlImagen(rawUrl) {
       if (!rawUrl) return '';
@@ -871,7 +877,7 @@
       return url;
     }
 
-    // ================= 1. CARGAR REDES SOCIALES =================
+    // ================= 1. REDES SOCIALES =================
     async function cargarRedesDesdeSheet() {
       try {
         const response = await fetch(GVIZ_REDES_URL);
@@ -933,7 +939,7 @@
       }
     }
 
-    // ================= 2. CARGAR LOGO =================
+    // ================= 2. LOGO =================
     async function cargarLogoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_LOGO_URL);
@@ -965,7 +971,7 @@
       }
     }
 
-    // ================= 3. CARGAR NOTICIAS & SPA ROUTER =================
+    // ================= 3. NOTICIAS & SPA ROUTER =================
     async function cargarInformativoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_NOTICIAS_URL);
@@ -1059,7 +1065,6 @@
       `).join('');
     }
 
-    // ================= 4. LÓGICA DE SUB-WEB (SPA) =================
     function abrirNoticia(id) {
       const articulo = noticiasGlobales.find(n => n.id === id);
       if (!articulo) return;
@@ -1076,7 +1081,6 @@
       imgElem.alt = articulo.titulo;
       imgElem.onerror = function() { this.src = imgPlaceholder; };
 
-      // Noticias Recientes
       const recientes = noticiasGlobales.filter(n => n.id !== id).slice(0, 5);
       const containerRecientes = document.getElementById('sidebarRecientes');
       
@@ -1094,7 +1098,6 @@
         containerRecientes.innerHTML = `<div style="font-size:12px; color:var(--text-muted);">No hay más noticias recientes.</div>`;
       }
 
-      // Otras noticias del mismo tipo
       const relacionadas = noticiasGlobales.filter(n => n.id !== id && n.tipo.trim().toLowerCase() === articulo.tipo.trim().toLowerCase());
       const gridRelacionadas = document.getElementById('gridRelacionadas');
       const tituloRel = document.getElementById('tituloRelacionadas');
@@ -1147,7 +1150,56 @@
       }
     }
 
-    // ================= 5. CARGAR HORARIOS DE EMISIÓN (LÍNEA 5 = DÍAS, COL A = HORA) =================
+    // ================= 4. HORARIOS: PARSER CORREGIDO PARA CELDAS COMBINADAS =================
+    
+    // Función auxiliar para extraer el texto de hora de la celda de Google Sheets
+    function extraerTextoHora(cell) {
+      if (!cell) return '';
+      if (cell.f) return String(cell.f).trim();
+      const val = cell.v;
+      if (val === null || val === undefined) return '';
+      if (Array.isArray(val)) {
+        const h = val[0];
+        const m = val[1] < 10 ? '0' + val[1] : val[1];
+        return `${h}:${m}`;
+      }
+      return String(val).trim();
+    }
+
+    // Formateador a 12 horas AM/PM
+    function formatearHoraAMPM(strHora) {
+      if (!strHora) return '';
+      strHora = strHora.trim();
+      if (/am|pm/i.test(strHora)) return strHora.toUpperCase();
+
+      const match = strHora.match(/^(\d{1,2}):(\d{2})/);
+      if (match) {
+        let h = parseInt(match[1], 10);
+        const m = match[2];
+        let ampm = 'AM';
+
+        if (h === 12) {
+          ampm = 'PM';
+        } else if (h >= 1 && h <= 5) {
+          ampm = 'PM'; // Franja vespertina habitual
+        } else if (h >= 13) {
+          h = h - 12;
+          ampm = 'PM';
+        } else if (h >= 6 && h <= 11) {
+          ampm = 'AM';
+        }
+        return `${h}:${m} ${ampm}`;
+      }
+      return strHora;
+    }
+
+    // Normalizador de nombres de días
+    function normalizarDia(nombre) {
+      return nombre.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
     async function cargarHorariosDesdeSheet() {
       try {
         const response = await fetch(GVIZ_HORARIOS_URL);
@@ -1156,21 +1208,21 @@
         const data = JSON.parse(jsonString);
 
         if (!data.table || !data.table.rows || data.table.rows.length === 0) {
-          document.getElementById('listHorarios').innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay horarios disponibles.</div>`;
+          document.getElementById('listHorarios').innerHTML = 
+            `<div style="color:var(--text-muted); font-size:14px;">No hay horarios disponibles.</div>`;
           return;
         }
 
         const rows = data.table.rows;
 
-        // Fila 5 en Excel corresponde al índice 4 (0-based)
+        // Fila 5 en Excel = Índice 4 (0-based)
         let filaEncabezados = 4;
         if (rows.length <= filaEncabezados) {
           filaEncabezados = 0;
         } else {
-          // Si en filas 0 a 6 se detecta 'lunes', 'martes' o 'hora', ajusta la fila
-          for (let r = 0; r < Math.min(rows.length, 7); r++) {
+          for (let r = 0; r < Math.min(rows.length, 8); r++) {
             const textoFila = (rows[r].c || []).map(c => String(c?.v || '').toLowerCase()).join(' ');
-            if (textoFila.includes('lunes') || textoFila.includes('martes') || textoFila.includes('hora')) {
+            if (textoFila.includes('lunes') || textoFila.includes('martes') || textoFila.includes('sabado')) {
               filaEncabezados = r;
               break;
             }
@@ -1178,85 +1230,116 @@
         }
 
         const celdasFila5 = rows[filaEncabezados]?.c || [];
+        
+        // Días válidos reconocidos (Lunes a Domingo)
+        const DIAS_OFICIALES = [
+          { clave: 'lunes',     nombre: 'LUNES' },
+          { clave: 'martes',    nombre: 'MARTES' },
+          { clave: 'miercoles', nombre: 'MIÉRCOLES' },
+          { clave: 'jueves',    nombre: 'JUEVES' },
+          { clave: 'viernes',   nombre: 'VIERNES' },
+          { clave: 'sabado',    nombre: 'SÁBADO' },
+          { clave: 'domingo',   nombre: 'DOMINGO' }
+        ];
+
         const diasColumnas = [];
 
-        // Detectar columnas de días de la semana a partir de la columna B (índice 1 en adelante)
+        // Detecta solo las columnas que son verdaderos días (DESCARTA "HORA", "FECHA", etc.)
         celdasFila5.forEach((celda, idx) => {
-          const val = String(celda?.v || '').trim();
-          if (val && idx > 0) {
-            diasColumnas.push({ colIndex: idx, nombreDia: val });
+          const valor = String(celda?.v || '').trim();
+          if (!valor || idx === 0) return;
+
+          const valorNorm = normalizarDia(valor);
+          // Ignorar explícitamente "hora"
+          if (valorNorm === 'hora') return;
+
+          const diaCoincidente = DIAS_OFICIALES.find(d => valorNorm.includes(d.clave));
+          if (diaCoincidente) {
+            diasColumnas.push({
+              colIndex: idx,
+              nombreDia: diaCoincidente.nombre,
+              clave: diaCoincidente.clave
+            });
           }
         });
 
-        // Si es formato matriz semanal (varios días en la fila 5)
-        if (diasColumnas.length > 0) {
-          horariosGlobalesPorDia = {};
-          diasColumnas.forEach(d => {
-            horariosGlobalesPorDia[d.nombreDia] = [];
-          });
+        // Ordenar las pestañas en secuencia estándar: Lunes a Domingo
+        diasColumnas.sort((a, b) => {
+          const idxA = DIAS_OFICIALES.findIndex(d => d.clave === a.clave);
+          const idxB = DIAS_OFICIALES.findIndex(d => d.clave === b.clave);
+          return idxA - idxB;
+        });
 
-          // Leer las filas posteriores a la fila 5
-          for (let i = filaEncabezados + 1; i < rows.length; i++) {
-            const cells = rows[i].c;
-            if (!cells) continue;
+        if (diasColumnas.length === 0) {
+          document.getElementById('listHorarios').innerHTML = 
+            `<div style="color:var(--text-muted); font-size:14px;">No se identificaron los días de la semana en la fila 5.</div>`;
+          return;
+        }
 
-            // Columna A = La Hora
-            const hora = String(cells[0]?.v ?? '').trim();
-            if (!hora) continue;
+        // Inicializar contenedor de cada día
+        horariosGlobalesPorDia = {};
+        diasColumnas.forEach(d => {
+          horariosGlobalesPorDia[d.nombreDia] = [];
+        });
 
-            // Recorrer cada columna de día para esa hora
-            diasColumnas.forEach(d => {
-              const programa = String(cells[d.colIndex]?.v ?? '').trim();
-              if (programa && programa !== '-' && programa !== '.') {
-                horariosGlobalesPorDia[d.nombreDia].push({
-                  hora: hora,
-                  programa: programa,
+        // Lectura de filas de programas (debajo de la fila 5)
+        for (let i = filaEncabezados + 1; i < rows.length; i++) {
+          const cells = rows[i].c;
+          if (!cells) continue;
+
+          // Columna A = La Hora
+          const horaRaw = extraerTextoHora(cells[0]);
+          if (!horaRaw) continue;
+
+          const horaFormateada = formatearHoraAMPM(horaRaw);
+
+          // RESOLUCIÓN DE CELDAS COMBINADAS HORIZONTALMENTE:
+          // Si una celda tiene un programa, se propaga hacia la derecha en los días vacíos
+          let programaActual = '';
+
+          for (let d of diasColumnas) {
+            const contenidoCelda = String(cells[d.colIndex]?.v ?? '').trim();
+
+            if (contenidoCelda && contenidoCelda !== '-' && contenidoCelda !== '.') {
+              programaActual = contenidoCelda;
+            }
+
+            // Si hay un programa asignado para este día en este horario
+            if (programaActual) {
+              const listaDelDia = horariosGlobalesPorDia[d.nombreDia];
+              const ultimoItem = listaDelDia[listaDelDia.length - 1];
+
+              // ELIMINACIÓN DE DUPLICADOS VERTICALES:
+              // Solo agrega si es un programa nuevo o un cambio de horario real
+              if (!ultimoItem || ultimoItem.programa !== programaActual) {
+                listaDelDia.push({
+                  hora: horaFormateada,
+                  programa: programaActual,
                   dia: d.nombreDia
                 });
               }
-            });
-          }
-
-          renderizarPestañasYHorarios(diasColumnas);
-        } else {
-          // Formato lista simple en caso de que solo haya una columna
-          const itemsLista = [];
-          for (let i = filaEncabezados + 1; i < rows.length; i++) {
-            const cells = rows[i].c;
-            if (!cells) continue;
-            const h = String(cells[0]?.v ?? '').trim();
-            const p = String(cells[1]?.v ?? '').trim();
-            if (h || p) {
-              itemsLista.push({ hora: h, programa: p, dia: 'Programación Regular' });
             }
           }
-          document.getElementById('scheduleTabs').style.display = 'none';
-          document.getElementById('listHorarios').innerHTML = itemsLista.map(item => `
-            <div class="schedule-item">
-              <div class="schedule-time-badge"><span class="schedule-time">${item.hora}</span></div>
-              <div class="schedule-info">
-                <div class="schedule-prog-title">${item.programa}</div>
-                <small class="schedule-day-label">${item.dia}</small>
-              </div>
-            </div>
-          `).join('');
         }
 
+        renderizarPestañasYHorarios(diasColumnas);
+
       } catch (e) {
-        console.warn("Error cargando hoja de horarios:", e);
-        document.getElementById('listHorarios').innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No se pudo conectar a la hoja de horarios.</div>`;
+        console.warn("Error cargando parrilla de horarios:", e);
+        document.getElementById('listHorarios').innerHTML = 
+          `<div style="color:var(--text-muted); font-size:14px;">Error al conectar con la hoja de horarios.</div>`;
       }
     }
 
-    // Renderiza pestañas de días y activa el día actual
     function renderizarPestañasYHorarios(diasColumnas) {
       const containerTabs = document.getElementById('scheduleTabs');
-      const diasSemanaNombres = ['domingo', 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado'];
-      const diaSemanaHoy = diasSemanaNombres[new Date().getDay()];
+      
+      // Mapeo del día actual en Venezuela / sistema
+      const DIAS_MAPA = ['domingo', 'lunes', 'martes', 'miercoles', 'miercoles', 'jueves', 'viernes', 'sabado'];
+      const diaSemanaHoy = DIAS_MAPA[new Date().getDay()];
 
-      // Buscar si el día de hoy coincide con alguna pestaña
       let diaSeleccionado = diasColumnas[0].nombreDia;
-      const diaEncontrado = diasColumnas.find(d => d.nombreDia.toLowerCase().includes(diaSemanaHoy));
+      const diaEncontrado = diasColumnas.find(d => d.clave.includes(diaSemanaHoy));
       if (diaEncontrado) {
         diaSeleccionado = diaEncontrado.nombreDia;
       }
@@ -1264,7 +1347,7 @@
       containerTabs.innerHTML = diasColumnas.map(d => `
         <button 
           class="day-tab-btn ${d.nombreDia === diaSeleccionado ? 'active' : ''}" 
-          onclick="cambiarDiaHorario('${d.nombreDia.replace(/'/g, "\\'")}', this)">
+          onclick="cambiarDiaHorario('${d.nombreDia}', this)">
           ${d.nombreDia}
         </button>
       `).join('');
@@ -1272,20 +1355,18 @@
       mostrarProgramasDelDia(diaSeleccionado);
     }
 
-    // Cambia el día mostrado al pulsar un botón
     function cambiarDiaHorario(nombreDia, botonElem) {
       document.querySelectorAll('.day-tab-btn').forEach(btn => btn.classList.remove('active'));
       if (botonElem) botonElem.classList.add('active');
       mostrarProgramasDelDia(nombreDia);
     }
 
-    // Muestra los programas del día en la lista
     function mostrarProgramasDelDia(nombreDia) {
       const container = document.getElementById('listHorarios');
       const lista = horariosGlobalesPorDia[nombreDia] || [];
 
       if (lista.length === 0) {
-        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; padding: 10px;">No hay programas registrados para ${nombreDia}.</div>`;
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; padding: 12px;">No hay programas registrados para ${nombreDia}.</div>`;
         return;
       }
 
@@ -1302,13 +1383,13 @@
       `).join('');
     }
 
-    // Inicializar todas las fuentes de datos de Google Sheets
+    // Inicializar cargas de todas las fuentes
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
     cargarHorariosDesdeSheet();
 
-    /* ================= 6. REPRODUCTOR EN ESQUINA INFERIOR DERECHA ================= */
+    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
     const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
     const video = document.getElementById('videoPlayer');
     const overlay = document.getElementById('clickPlayOverlay');
