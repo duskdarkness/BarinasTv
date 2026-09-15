@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Informativo BTV</title>
+  <title>BARINAS TV | Señal Oficial & Noticias</title>
 
-  <!-- Evita bloqueos de hotlink por parte de servidores externos -->
+  <!-- Evita bloqueos de imagen por parte de servidores externos -->
   <meta name="referrer" content="no-referrer">
 
   <!-- Motor HLS.js optimizado -->
@@ -14,13 +14,15 @@
   <!-- Tipografía ligera Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
       --red: #dc2626;
+      --red-hover: #b91c1c;
       --bg: #090a0f;
       --surface: #12151e;
+      --surface-card: #161b26;
       --border: rgba(255, 255, 255, 0.08);
       --text: #f8fafc;
       --text-muted: #94a3b8;
@@ -32,7 +34,7 @@
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      line-height: 1.5;
+      line-height: 1.6;
       overflow-x: hidden;
     }
 
@@ -65,8 +67,6 @@
       transition: color 0.2s ease, opacity 0.2s ease;
     }
     .social-btn:hover:not(.disabled) { color: var(--red); }
-
-    /* Estilo para las redes que no están configuradas en el Excel (visibles pero no funcionan) */
     .social-btn.disabled {
       opacity: 0.35;
       cursor: default;
@@ -91,6 +91,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      cursor: pointer;
     }
     #brandLogoContainer {
       display: flex;
@@ -127,10 +128,12 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--text-muted);
-      cursor: default; /* Visibles pero sin navegación */
+      cursor: pointer;
+      transition: color 0.2s;
     }
+    .nav-links a:hover { color: #fff; }
 
-    /* ================= CONTENEDOR ================= */
+    /* ================= CONTENEDOR GENERAL ================= */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -177,7 +180,7 @@
       color: #cbd5e1;
     }
 
-    /* ================= GRID & TARJETAS DE NOTICIAS ================= */
+    /* ================= GRILLA PRINCIPAL DE NOTICIAS ================= */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -194,16 +197,17 @@
       justify-content: space-between;
       transition: transform 0.2s ease, border-color 0.2s ease;
       position: relative;
+      cursor: pointer;
     }
     .news-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(220, 38, 38, 0.4);
+      transform: translateY(-4px);
+      border-color: rgba(220, 38, 38, 0.5);
+    }
+    .news-card:hover .read-more-btn {
+      color: var(--red);
     }
 
-    /* 1. Encabezado de la noticia (Tipo + Título) */
-    .news-header {
-      margin-bottom: 14px;
-    }
+    .news-header { margin-bottom: 14px; }
     .news-tag {
       display: inline-block;
       font-size: 11px;
@@ -224,19 +228,17 @@
       white-space: pre-line;
     }
 
-    /* 2. Cuerpo de la noticia con IMAGEN COMPLETA SIN RECORTAR */
     .news-body-container {
       position: relative;
       border-radius: 10px;
       overflow: hidden;
-      min-height: 280px;
+      min-height: 260px;
       background-color: #080a0f;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-
     .news-bg-img {
       position: absolute;
       inset: 0;
@@ -247,7 +249,6 @@
       z-index: 1;
       padding: 6px;
     }
-
     .news-bg-blur {
       position: absolute;
       inset: 0;
@@ -258,7 +259,6 @@
       transform: scale(1.1);
       z-index: 0;
     }
-
     .news-body-overlay {
       position: relative;
       z-index: 2;
@@ -269,30 +269,196 @@
         rgba(9, 11, 17, 0.98) 100%
       );
       backdrop-filter: blur(3px);
-      padding: 20px 16px 16px;
+      padding: 20px 16px 14px;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       margin-top: 100px;
     }
-
     .news-body-text {
       font-size: 14px;
       color: #f1f5f9;
-      line-height: 1.6;
+      line-height: 1.5;
       white-space: pre-line;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
-      max-height: 220px;
-      overflow-y: auto;
-      padding-right: 6px;
+      max-height: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+    .read-more-btn {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: color 0.2s ease;
     }
 
-    .news-body-text::-webkit-scrollbar {
-      width: 4px;
+    /* =========================================================================
+       SUB-WEB / VISTA DE NOTICIA INDIVIDUAL (DETALLE + SIDEBAR + RELACIONADAS)
+       ========================================================================= */
+    #vista-noticia {
+      display: none; /* Oculta por defecto */
+      animation: fadeIn 0.3s ease;
     }
-    .news-body-text::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 4px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+
+    /* Layout de 2 columnas: Artículo a la izquierda, Recientes a la derecha */
+    .article-layout {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: 36px;
+      margin-bottom: 60px;
+    }
+
+    /* Columna principal del artículo */
+    .article-main {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+    .article-header {
+      margin-bottom: 24px;
+    }
+    .article-title {
+      font-size: clamp(24px, 3.2vw, 36px);
+      font-weight: 800;
+      line-height: 1.25;
+      color: #fff;
+      margin-top: 10px;
+      white-space: pre-line;
+    }
+    .article-media {
+      width: 100%;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .article-media img {
+      width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+      display: block;
+      background: #06080d;
+    }
+    .article-body-content {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #cbd5e1;
+      white-space: pre-line;
+    }
+
+    /* Columna derecha: Noticias Recientes */
+    .article-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 800;
+      border-left: 3px solid var(--red);
+      padding-left: 10px;
+      margin-bottom: 16px;
+    }
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .recent-item {
+      display: flex;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .recent-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .recent-item:hover {
+      transform: translateX(4px);
+    }
+    .recent-item:hover .recent-item-title {
+      color: var(--red);
+    }
+    .recent-thumb {
+      width: 80px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #000;
+      flex-shrink: 0;
+    }
+    .recent-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .recent-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #fca5a5;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .recent-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: color 0.2s ease;
+    }
+
+    /* Sección de abajo: Otras noticias del mismo tipo */
+    .related-section {
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      padding-top: 30px;
     }
 
     /* HORARIOS */
@@ -319,7 +485,7 @@
     }
     .schedule-info { flex-grow: 1; margin-left: 15px; }
 
-    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
+    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA (PIP) ================= */
     .floating-player-box {
       position: fixed;
       bottom: 20px;
@@ -418,7 +584,9 @@
       color: #fff;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
+      .article-layout { grid-template-columns: 1fr; }
+      .article-main { padding: 20px; }
       .nav-links { display: none; }
       .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
       .grid { grid-template-columns: 1fr; }
@@ -427,7 +595,7 @@
 </head>
 <body>
 
-  <!-- REDES SOCIALES EN LA PARTE SUPERIOR (DESACTIVADAS POR DEFECTO HASTA LEER EL EXCEL) -->
+  <!-- BARRA SUPERIOR & REDES SOCIALES -->
   <div class="top-bar">
     <div class="top-bar-left">
       <span>Barinas, Venezuela &bull; Señal Oficial</span>
@@ -443,18 +611,17 @@
     </div>
   </div>
 
-  <!-- HEADER (LOGO DINÁMICO DESDE GOOGLE SHEETS) -->
+  <!-- HEADER FIJO CON LOGO (VUELVE AL INICIO AL DARLE CLIC) -->
   <header>
-    <div class="brand-container">
+    <div class="brand-container" onclick="volverInicio()">
       <div id="brandLogoContainer">
         <div class="logo-box">BTV</div>
       </div>
       <span class="brand-title">BARINAS TV</span>
     </div>
     <nav>
-      <!-- Enlaces visuales decorativos (no funcionales) -->
       <ul class="nav-links">
-        <li><a href="javascript:void(0)">Informativo BTV</a></li>
+        <li><a onclick="volverInicio()">Informativo BTV</a></li>
         <li><a href="javascript:void(0)">Noticias Varyna</a></li>
         <li><a href="javascript:void(0)">Programas</a></li>
         <li><a href="javascript:void(0)">Horarios</a></li>
@@ -464,96 +631,148 @@
 
   <main class="container">
 
-    <!-- PUBLICIDAD 1 -->
-    <div class="ad-banner">
-      <span class="ad-tag">Espacio Publicitario</span>
-      <div class="ad-content">Anúnciate aquí con Barinas TV &bull; Cobertura en todo el Estado</div>
+    <!-- =========================================================
+         VISTA 1: PORTADA PRINCIPAL (HOME)
+         ========================================================= -->
+    <div id="vista-portada">
+      <!-- PUBLICIDAD 1 -->
+      <div class="ad-banner">
+        <span class="ad-tag">Espacio Publicitario</span>
+        <div class="ad-content">Anúnciate aquí con Barinas TV &bull; Cobertura en todo el Estado</div>
+      </div>
+
+      <!-- SECCIÓN INFORMATIVO BTV -->
+      <section id="informativo-btv">
+        <div class="section-header">
+          <h2 class="section-title">Informativo BTV</h2>
+        </div>
+        <div class="grid" id="gridInformativoBTV">
+          <div style="color:var(--text-muted); font-size:14px;">Cargando informativo desde la hoja de cálculo...</div>
+        </div>
+      </section>
+
+      <!-- NOTICIAS VARYNA -->
+      <section id="noticias-varyna">
+        <div class="section-header">
+          <h2 class="section-title">Noticias Varyna</h2>
+        </div>
+        <div class="grid" id="gridNoticiasVaryna">
+          <article class="news-card">
+            <div class="news-header">
+              <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
+              <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
+            </div>
+            <div class="news-body-container">
+              <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
+              <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-img" alt="Foto Noticia">
+              <div class="news-body-overlay">
+                <p class="news-body-text">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional y fortalecer la economía de los pequeños y medianos productores.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- PUBLICIDAD 2 -->
+      <div class="ad-banner">
+        <span class="ad-tag">Publicidad</span>
+        <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
+      </div>
+
+      <!-- PROGRAMAS -->
+      <section id="programas">
+        <div class="section-header">
+          <h2 class="section-title">Nuestra Programación</h2>
+        </div>
+        <div class="grid" id="gridProgramas">
+          <article class="news-card">
+            <div class="news-header">
+              <span class="news-tag">Matutino</span>
+              <h3 class="news-title">El Mañanero Llanero</h3>
+            </div>
+            <div class="news-body-container">
+              <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
+              <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-img" alt="Programa">
+              <div class="news-body-overlay">
+                <p class="news-body-text">Entrevistas de actualidad, café y la mejor música de los llanos venezolanos para comenzar el día con la mejor información.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- HORARIOS -->
+      <section id="horarios">
+        <div class="section-header">
+          <h2 class="section-title">Horarios de Emisión</h2>
+        </div>
+        <div class="schedule-list" id="listHorarios">
+          <div class="schedule-item">
+            <span class="schedule-time">07:00 AM</span>
+            <div class="schedule-info"><strong>El Mañanero Llanero</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
+          </div>
+          <div class="schedule-item">
+            <span class="schedule-time">12:00 PM</span>
+            <div class="schedule-info"><strong>Informativo BTV - Meridiano</strong><br><small style="color:var(--text-muted)">Lunes a Sábado</small></div>
+          </div>
+          <div class="schedule-item">
+            <span class="schedule-time">07:00 PM</span>
+            <div class="schedule-info"><strong>Informativo BTV - Emisión Estelar</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <!-- SECCIÓN INFORMATIVO BTV (ORDEN INVERTIDO: ÚLTIMAS DE PRIMERAS) -->
-    <section id="informativo-btv">
-      <div class="section-header">
-        <h2 class="section-title">Informativo BTV</h2>
-      </div>
-      <div class="grid" id="gridInformativoBTV">
-        <div style="color:var(--text-muted); font-size:14px;">Cargando informativo desde la hoja de cálculo...</div>
-      </div>
-    </section>
+    <!-- =========================================================
+         VISTA 2: SUB-WEB DE LA NOTICIA INDIVIDUAL (SPA)
+         ========================================================= -->
+    <div id="vista-noticia">
+      <button class="btn-back" onclick="volverInicio()">
+        &#8592; Volver al inicio
+      </button>
 
-    <!-- NOTICIAS VARYNA (ESTÁTICA / VISUAL) -->
-    <section id="noticias-varyna">
-      <div class="section-header">
-        <h2 class="section-title">Noticias Varyna</h2>
-      </div>
-      <div class="grid" id="gridNoticiasVaryna">
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
-            <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
+      <div class="article-layout">
+        <!-- Columna Izquierda: Noticia Completa -->
+        <article class="article-main">
+          <div class="article-header">
+            <span class="news-tag" id="detalleTag">Informativo</span>
+            <h1 class="article-title" id="detalleTitulo">Título de la Noticia</h1>
           </div>
-          <div class="news-body-container">
-            <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-img" alt="Foto Noticia">
-            <div class="news-body-overlay">
-              <p class="news-body-text">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional y fortalecer la economía de los pequeños y medianos productores.</p>
-            </div>
+
+          <div class="article-media">
+            <img id="detalleImagen" src="" alt="Noticia BTV" referrerpolicy="no-referrer">
+          </div>
+
+          <div class="article-body-content" id="detalleNoticia">
+            Cargando contenido de la noticia...
           </div>
         </article>
-      </div>
-    </section>
 
-    <!-- PUBLICIDAD 2 -->
-    <div class="ad-banner">
-      <span class="ad-tag">Publicidad</span>
-      <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
+        <!-- Columna Derecha: Noticias Recientes -->
+        <aside class="article-sidebar">
+          <div class="sidebar-card">
+            <h3 class="sidebar-title">Noticias Recientes</h3>
+            <div class="recent-list" id="sidebarRecientes">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Parte Inferior: Otras noticias del mismo tipo -->
+      <section class="related-section">
+        <div class="section-header">
+          <h2 class="section-title" id="tituloRelacionadas">Otras noticias del mismo tipo</h2>
+        </div>
+        <div class="grid" id="gridRelacionadas">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </section>
     </div>
-
-    <!-- PROGRAMAS (ESTÁTICA / VISUAL) -->
-    <section id="programas">
-      <div class="section-header">
-        <h2 class="section-title">Nuestra Programación</h2>
-      </div>
-      <div class="grid" id="gridProgramas">
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag">Matutino</span>
-            <h3 class="news-title">El Mañanero Llanero</h3>
-          </div>
-          <div class="news-body-container">
-            <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-img" alt="Programa">
-            <div class="news-body-overlay">
-              <p class="news-body-text">Entrevistas de actualidad, café y la mejor música de los llanos venezolanos para comenzar el día con la mejor información.</p>
-            </div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- HORARIOS (ESTÁTICA / VISUAL) -->
-    <section id="horarios">
-      <div class="section-header">
-        <h2 class="section-title">Horarios de Emisión</h2>
-      </div>
-      <div class="schedule-list" id="listHorarios">
-        <div class="schedule-item">
-          <span class="schedule-time">07:00 AM</span>
-          <div class="schedule-info"><strong>El Mañanero Llanero</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-        </div>
-        <div class="schedule-item">
-          <span class="schedule-time">12:00 PM</span>
-          <div class="schedule-info"><strong>Informativo BTV - Meridiano</strong><br><small style="color:var(--text-muted)">Lunes a Sábado</small></div>
-        </div>
-        <div class="schedule-item">
-          <span class="schedule-time">07:00 PM</span>
-          <div class="schedule-info"><strong>Informativo BTV - Emisión Estelar</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-        </div>
-      </div>
-    </section>
 
   </main>
 
-  <!-- REPRODUCTOR EN LA ESQUINA INFERIOR DERECHA -->
+  <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA (NO SE INTERRUMPE) ================= -->
   <div class="floating-player-box">
     <div class="player-header">
       <div class="live-tag">
@@ -586,6 +805,11 @@
     const GVIZ_LOGO_URL     = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_REDES_URL    = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
 
+    const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
+
+    // Almacén global de noticias en memoria
+    let noticiasGlobales = [];
+
     function procesarUrlImagen(rawUrl) {
       if (!rawUrl) return '';
       let str = String(rawUrl).trim();
@@ -611,7 +835,7 @@
       return url;
     }
 
-    // ================= CARGAR REDES SOCIALES DESDE GOOGLE SHEETS =================
+    // ================= 1. CARGAR REDES SOCIALES =================
     async function cargarRedesDesdeSheet() {
       try {
         const response = await fetch(GVIZ_REDES_URL);
@@ -628,7 +852,6 @@
             const col0 = String(row.c[0]?.v || '').trim().toLowerCase();
             const col1 = String(row.c[1]?.v || '').trim();
 
-            // Mapeo si la hoja tiene "Red / Enlace"
             if (col1.startsWith('http')) {
               if (col0.includes('face')) detected['facebook'] = col1;
               else if (col0.includes('insta')) detected['instagram'] = col1;
@@ -639,7 +862,6 @@
               else if (col0.includes('tele')) detected['telegram'] = col1;
             }
 
-            // Detección automática en cualquier celda con URL
             row.c.forEach(cell => {
               const val = String(cell?.v || '').trim();
               if (val.startsWith('http')) {
@@ -654,7 +876,6 @@
             });
           });
 
-          // Activar solo las redes configuradas; el resto permanece visible pero desactivado
           const listaRedes = ['facebook', 'instagram', 'x', 'youtube', 'whatsapp', 'tiktok', 'telegram'];
           listaRedes.forEach(red => {
             const el = document.getElementById(`link-${red}`);
@@ -672,11 +893,11 @@
           });
         }
       } catch (e) {
-        console.warn("Redes sociales no cargadas, permanecen inactivas:", e);
+        console.warn("Redes sociales inactivas:", e);
       }
     }
 
-    // ================= CARGAR LOGO =================
+    // ================= 2. CARGAR LOGO =================
     async function cargarLogoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_LOGO_URL);
@@ -704,11 +925,11 @@
           }
         }
       } catch (e) {
-        console.warn("Logo remoto no disponible, usando BTV:", e);
+        console.warn("Logo remoto no disponible:", e);
       }
     }
 
-    // ================= CARGAR NOTICIAS CON ORDEN INVERTIDO =================
+    // ================= 3. CARGAR NOTICIAS & SPA ROUTER =================
     async function cargarInformativoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_NOTICIAS_URL);
@@ -735,6 +956,8 @@
         }
 
         const noticias = [];
+        let idCounter = 0;
+
         for (let i = startIndex; i < rows.length; i++) {
           const cells = rows[i].c;
           if (!cells) continue;
@@ -745,19 +968,25 @@
           const imagenRaw = (cells[colImagen]?.v ?? '').toString().trim();
 
           if (tipo || titulo || noticia) {
+            idCounter++;
             noticias.push({
+              id: idCounter,
               tipo: tipo || 'Informativo',
               titulo: titulo || 'Sin título',
               noticia: noticia || '',
-              imagen: procesarUrlImagen(imagenRaw)
+              imagen: procesarUrlImagen(imagenRaw) || imgPlaceholder
             });
           }
         }
 
-        // INVERSIÓN: Las últimas filas agregadas en el Excel se muestran de primeras
+        // Orden invertido (las últimas agregadas salen de primeras)
         noticias.reverse();
+        noticiasGlobales = noticias;
 
-        renderizarInformativoBTV(noticias);
+        renderizarPortada(noticiasGlobales);
+
+        // Si el usuario recargó con un enlace de noticia directo (#noticia-X)
+        verificarRutaHash();
       } catch (error) {
         console.error("Error al cargar noticias:", error);
         document.getElementById('gridInformativoBTV').innerHTML = 
@@ -765,49 +994,144 @@
       }
     }
 
-    // RENDER: IMAGEN COMPLETA SIN RECORTAR
-    function renderizarInformativoBTV(items) {
+    // Renderiza la portada principal
+    function renderizarPortada(items) {
       const container = document.getElementById('gridInformativoBTV');
       if (!items || items.length === 0) {
         container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay noticias disponibles.</div>`;
         return;
       }
 
-      const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
+      container.innerHTML = items.map(item => `
+        <article class="news-card" onclick="abrirNoticia(${item.id})">
+          <div class="news-header">
+            <span class="news-tag">${item.tipo}</span>
+            <h3 class="news-title">${item.titulo}</h3>
+          </div>
+          
+          <div class="news-body-container">
+            <img src="${item.imagen}" class="news-bg-blur" alt="Fondo" aria-hidden="true">
+            <img 
+              src="${item.imagen}" 
+              class="news-bg-img" 
+              alt="${item.titulo}" 
+              loading="lazy" 
+              referrerpolicy="no-referrer"
+              onerror="this.onerror=null; this.src='${imgPlaceholder}';">
+            <div class="news-body-overlay">
+              <p class="news-body-text">${item.noticia}</p>
+              <div class="read-more-btn">Leer noticia completa &rarr;</div>
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
 
-      container.innerHTML = items.map(item => {
-        const fotoFondo = item.imagen || imgPlaceholder;
-        return `
-          <article class="news-card">
+    // ================= 4. LÓGICA DE LA SUB-WEB (SPA) =================
+
+    // Abre la sub-web de la noticia seleccionada
+    function abrirNoticia(id) {
+      const articulo = noticiasGlobales.find(n => n.id === id);
+      if (!articulo) return;
+
+      // Cambia de vista sin refrescar la página
+      document.getElementById('vista-portada').style.display = 'none';
+      document.getElementById('vista-noticia').style.display = 'block';
+
+      // 1. Datos de la noticia principal
+      document.getElementById('detalleTag').textContent = articulo.tipo;
+      document.getElementById('detalleTitulo').textContent = articulo.titulo;
+      document.getElementById('detalleNoticia').textContent = articulo.noticia;
+      
+      const imgElem = document.getElementById('detalleImagen');
+      imgElem.src = articulo.imagen;
+      imgElem.alt = articulo.titulo;
+      imgElem.onerror = function() { this.src = imgPlaceholder; };
+
+      // 2. Lado Derecho: Noticias Recientes (las 5 más nuevas excepto la actual)
+      const recientes = noticiasGlobales.filter(n => n.id !== id).slice(0, 5);
+      const containerRecientes = document.getElementById('sidebarRecientes');
+      
+      if (recientes.length > 0) {
+        containerRecientes.innerHTML = recientes.map(r => `
+          <div class="recent-item" onclick="abrirNoticia(${r.id})">
+            <img src="${r.imagen}" class="recent-thumb" alt="${r.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}'">
+            <div class="recent-info">
+              <span class="recent-tag">${r.tipo}</span>
+              <h4 class="recent-item-title">${r.titulo}</h4>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        containerRecientes.innerHTML = `<div style="font-size:12px; color:var(--text-muted);">No hay más noticias recientes.</div>`;
+      }
+
+      // 3. Parte Inferior: Otras noticias del mismo tipo
+      const relacionadas = noticiasGlobales.filter(n => n.id !== id && n.tipo.trim().toLowerCase() === articulo.tipo.trim().toLowerCase());
+      const gridRelacionadas = document.getElementById('gridRelacionadas');
+      const tituloRel = document.getElementById('tituloRelacionadas');
+
+      tituloRel.textContent = `Más noticias de ${articulo.tipo}`;
+
+      if (relacionadas.length > 0) {
+        gridRelacionadas.innerHTML = relacionadas.map(item => `
+          <article class="news-card" onclick="abrirNoticia(${item.id})">
             <div class="news-header">
               <span class="news-tag">${item.tipo}</span>
               <h3 class="news-title">${item.titulo}</h3>
             </div>
-            
             <div class="news-body-container">
-              <img src="${fotoFondo}" class="news-bg-blur" alt="Fondo" aria-hidden="true">
-              <img 
-                src="${fotoFondo}" 
-                class="news-bg-img" 
-                alt="${item.titulo}" 
-                loading="lazy" 
-                referrerpolicy="no-referrer"
-                onerror="this.onerror=null; this.src='${imgPlaceholder}';">
+              <img src="${item.imagen}" class="news-bg-blur" alt="Fondo" aria-hidden="true">
+              <img src="${item.imagen}" class="news-bg-img" alt="${item.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}';">
               <div class="news-body-overlay">
                 <p class="news-body-text">${item.noticia}</p>
+                <div class="read-more-btn">Leer noticia completa &rarr;</div>
               </div>
             </div>
           </article>
-        `;
-      }).join('');
+        `).join('');
+      } else {
+        gridRelacionadas.innerHTML = `<div style="color:var(--text-muted); font-size:14px; grid-column: 1/-1;">No hay más noticias registradas en la categoría ${articulo.tipo}.</div>`;
+      }
+
+      // Desplaza suavemente hacia arriba
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Modifica la URL para que el usuario pueda compartir el enlace o usar la flecha atrás
+      location.hash = `noticia-${id}`;
     }
 
-    // Inicializar llamadas a las hojas de cálculo
+    // Vuelve a la portada principal
+    function volverInicio() {
+      document.getElementById('vista-noticia').style.display = 'none';
+      document.getElementById('vista-portada').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Limpia el hash en la barra de direcciones
+      history.pushState("", document.title, window.location.pathname + window.location.search);
+    }
+
+    // Soporte para botón atrás del navegador
+    window.addEventListener('popstate', () => {
+      verificarRutaHash();
+    });
+
+    function verificarRutaHash() {
+      const hash = location.hash;
+      if (hash.startsWith('#noticia-')) {
+        const id = parseInt(hash.replace('#noticia-', ''), 10);
+        if (id) abrirNoticia(id);
+      } else {
+        volverInicio();
+      }
+    }
+
+    // Iniciar cargas
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
 
-    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
+    /* ================= 5. REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
     const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
     const video = document.getElementById('videoPlayer');
     const overlay = document.getElementById('clickPlayOverlay');
