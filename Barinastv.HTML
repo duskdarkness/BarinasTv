@@ -661,7 +661,7 @@
     </div>
   </div>
 
-  <!-- HEADER FIJO CON LOGO (VUELVE AL INICIO AL DARLE CLIC) -->
+  <!-- HEADER FIJO CON LOGO -->
   <header>
     <div class="brand-container" onclick="volverInicio()">
       <div id="brandLogoContainer">
@@ -1150,10 +1150,16 @@
       }
     }
 
-    // ================= 4. HORARIOS: PARSER CORREGIDO PARA CELDAS COMBINADAS =================
+    // ================= 4. HORARIOS: PARSER ROBUSTO DE MATRIZ SEMANAL =================
     
-    // Función auxiliar para extraer el texto de hora de la celda de Google Sheets
-    function extraerTextoHora(cell) {
+    function normalizarTexto(txt) {
+      return String(txt || '')
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function extraerHoraRaw(cell) {
       if (!cell) return '';
       if (cell.f) return String(cell.f).trim();
       const val = cell.v;
@@ -1164,40 +1170,6 @@
         return `${h}:${m}`;
       }
       return String(val).trim();
-    }
-
-    // Formateador a 12 horas AM/PM
-    function formatearHoraAMPM(strHora) {
-      if (!strHora) return '';
-      strHora = strHora.trim();
-      if (/am|pm/i.test(strHora)) return strHora.toUpperCase();
-
-      const match = strHora.match(/^(\d{1,2}):(\d{2})/);
-      if (match) {
-        let h = parseInt(match[1], 10);
-        const m = match[2];
-        let ampm = 'AM';
-
-        if (h === 12) {
-          ampm = 'PM';
-        } else if (h >= 1 && h <= 5) {
-          ampm = 'PM'; // Franja vespertina habitual
-        } else if (h >= 13) {
-          h = h - 12;
-          ampm = 'PM';
-        } else if (h >= 6 && h <= 11) {
-          ampm = 'AM';
-        }
-        return `${h}:${m} ${ampm}`;
-      }
-      return strHora;
-    }
-
-    // Normalizador de nombres de días
-    function normalizarDia(nombre) {
-      return nombre.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .trim();
     }
 
     async function cargarHorariosDesdeSheet() {
@@ -1215,24 +1187,20 @@
 
         const rows = data.table.rows;
 
-        // Fila 5 en Excel = Índice 4 (0-based)
-        let filaEncabezados = 4;
-        if (rows.length <= filaEncabezados) {
-          filaEncabezados = 0;
-        } else {
-          for (let r = 0; r < Math.min(rows.length, 8); r++) {
-            const textoFila = (rows[r].c || []).map(c => String(c?.v || '').toLowerCase()).join(' ');
-            if (textoFila.includes('lunes') || textoFila.includes('martes') || textoFila.includes('sabado')) {
-              filaEncabezados = r;
-              break;
-            }
+        // 1. Localizar la fila 5 de los días (o la que contenga LUNES / MARTES / MIERCOLES)
+        let filaEncabezados = 4; // Fila 5 de Excel (0-based)
+        for (let r = 0; r < Math.min(rows.length, 10); r++) {
+          const texto = (rows[r].c || []).map(c => normalizarTexto(c?.v)).join(' ');
+          if (texto.includes('lunes') && texto.includes('martes')) {
+            filaEncabezados = r;
+            break;
           }
         }
 
         const celdasFila5 = rows[filaEncabezados]?.c || [];
-        
-        // Días válidos reconocidos (Lunes a Domingo)
-        const DIAS_OFICIALES = [
+
+        // 2. Mapeo estricto de las columnas de días
+        const DIAS_ORDEN = [
           { clave: 'lunes',     nombre: 'LUNES' },
           { clave: 'martes',    nombre: 'MARTES' },
           { clave: 'miercoles', nombre: 'MIÉRCOLES' },
@@ -1243,36 +1211,35 @@
         ];
 
         const diasColumnas = [];
+        let colHoraFin = -1;
 
-        // Detecta solo las columnas que son verdaderos días (DESCARTA "HORA", "FECHA", etc.)
         celdasFila5.forEach((celda, idx) => {
-          const valor = String(celda?.v || '').trim();
-          if (!valor || idx === 0) return;
+          const valNorm = normalizarTexto(celda?.v);
+          if (!valNorm) return;
 
-          const valorNorm = normalizarDia(valor);
-          // Ignorar explícitamente "hora"
-          if (valorNorm === 'hora') return;
+          if (valNorm === 'hora') {
+            colHoraFin = idx;
+            return;
+          }
 
-          const diaCoincidente = DIAS_OFICIALES.find(d => valorNorm.includes(d.clave));
-          if (diaCoincidente) {
+          const encontrado = DIAS_ORDEN.find(d => valNorm.includes(d.clave));
+          if (encontrado) {
             diasColumnas.push({
               colIndex: idx,
-              nombreDia: diaCoincidente.nombre,
-              clave: diaCoincidente.clave
+              nombreDia: encontrado.nombre,
+              clave: encontrado.clave
             });
           }
         });
 
-        // Ordenar las pestañas en secuencia estándar: Lunes a Domingo
+        // Ordenar las columnas de LUNES a DOMINGO
         diasColumnas.sort((a, b) => {
-          const idxA = DIAS_OFICIALES.findIndex(d => d.clave === a.clave);
-          const idxB = DIAS_OFICIALES.findIndex(d => d.clave === b.clave);
-          return idxA - idxB;
+          return DIAS_ORDEN.findIndex(d => d.clave === a.clave) - DIAS_ORDEN.findIndex(d => d.clave === b.clave);
         });
 
         if (diasColumnas.length === 0) {
           document.getElementById('listHorarios').innerHTML = 
-            `<div style="color:var(--text-muted); font-size:14px;">No se identificaron los días de la semana en la fila 5.</div>`;
+            `<div style="color:var(--text-muted); font-size:14px;">No se identificaron los días en la fila 5.</div>`;
           return;
         }
 
@@ -1282,39 +1249,71 @@
           horariosGlobalesPorDia[d.nombreDia] = [];
         });
 
-        // Lectura de filas de programas (debajo de la fila 5)
+        // 3. Seguimiento cronológico para resolver AM / PM sin confundir las 6:00
+        let esTardeNoche = false;
+        let ultimaHoraDetectada = 0;
+
+        function resolverAMPM(horaString) {
+          const match = horaString.match(/^(\d{1,2}):(\d{2})/);
+          if (!match) return horaString;
+
+          let h = parseInt(match[1], 10);
+          const m = match[2];
+
+          // Detección del mediodía (12:00)
+          if (h === 12 && !esTardeNoche && ultimaHoraDetectada >= 11) {
+            esTardeNoche = true;
+          }
+
+          let ampm = esTardeNoche ? 'PM' : 'AM';
+
+          // Si el horario vuelve a la madrugada (12:00 AM o 1:00 AM tras la medianoche)
+          if (esTardeNoche && h === 12 && ultimaHoraDetectada === 11) {
+            ampm = 'AM';
+            esTardeNoche = false;
+          }
+
+          ultimaHoraDetectada = h;
+          return `${h}:${m} ${ampm}`;
+        }
+
+        // 4. Lectura fila a fila con propagación de celdas combinadas horizontalmente
         for (let i = filaEncabezados + 1; i < rows.length; i++) {
           const cells = rows[i].c;
           if (!cells) continue;
 
-          // Columna A = La Hora
-          const horaRaw = extraerTextoHora(cells[0]);
-          if (!horaRaw) continue;
+          // Extraer hora de Columna A (o Columna L si Columna A viniera vacía)
+          let horaString = extraerHoraRaw(cells[0]);
+          if (!horaString && colHoraFin > 0) {
+            horaString = extraerHoraRaw(cells[colHoraFin]);
+          }
 
-          const horaFormateada = formatearHoraAMPM(horaRaw);
+          if (!horaString) continue;
 
-          // RESOLUCIÓN DE CELDAS COMBINADAS HORIZONTALMENTE:
-          // Si una celda tiene un programa, se propaga hacia la derecha en los días vacíos
-          let programaActual = '';
+          const horaFinal = resolverAMPM(horaString);
+
+          // PROPAGACIÓN HORIZONTAL:
+          // Si un bloque está combinado de Lunes a Viernes o Sábado a Domingo,
+          // el programa se propaga a los días siguientes que estén vacíos en esa fila.
+          let programaEnFila = '';
 
           for (let d of diasColumnas) {
-            const contenidoCelda = String(cells[d.colIndex]?.v ?? '').trim();
+            const contenido = String(cells[d.colIndex]?.v ?? '').trim();
 
-            if (contenidoCelda && contenidoCelda !== '-' && contenidoCelda !== '.') {
-              programaActual = contenidoCelda;
+            if (contenido && contenido !== '-' && contenido !== '.') {
+              programaEnFila = contenido;
             }
 
-            // Si hay un programa asignado para este día en este horario
-            if (programaActual) {
-              const listaDelDia = horariosGlobalesPorDia[d.nombreDia];
-              const ultimoItem = listaDelDia[listaDelDia.length - 1];
+            if (programaEnFila) {
+              const listaDia = horariosGlobalesPorDia[d.nombreDia];
+              const ultimo = listaDia[listaDia.length - 1];
 
-              // ELIMINACIÓN DE DUPLICADOS VERTICALES:
-              // Solo agrega si es un programa nuevo o un cambio de horario real
-              if (!ultimoItem || ultimoItem.programa !== programaActual) {
-                listaDelDia.push({
-                  hora: horaFormateada,
-                  programa: programaActual,
+              // EVITAR DUPLICADOS VERTICALES:
+              // Solo agrega si cambia el programa (inicio de una nueva emisión)
+              if (!ultimo || ultimo.programa !== programaEnFila) {
+                listaDia.push({
+                  hora: horaFinal,
+                  programa: programaEnFila,
                   dia: d.nombreDia
                 });
               }
@@ -1334,9 +1333,8 @@
     function renderizarPestañasYHorarios(diasColumnas) {
       const containerTabs = document.getElementById('scheduleTabs');
       
-      // Mapeo del día actual en Venezuela / sistema
-      const DIAS_MAPA = ['domingo', 'lunes', 'martes', 'miercoles', 'miercoles', 'jueves', 'viernes', 'sabado'];
-      const diaSemanaHoy = DIAS_MAPA[new Date().getDay()];
+      const DIAS_SISTEMA = ['domingo', 'lunes', 'martes', 'miercoles', 'miercoles', 'jueves', 'viernes', 'sabado'];
+      const diaSemanaHoy = DIAS_SISTEMA[new Date().getDay()];
 
       let diaSeleccionado = diasColumnas[0].nombreDia;
       const diaEncontrado = diasColumnas.find(d => d.clave.includes(diaSemanaHoy));
@@ -1383,7 +1381,7 @@
       `).join('');
     }
 
-    // Inicializar cargas de todas las fuentes
+    // Inicializar cargas
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
