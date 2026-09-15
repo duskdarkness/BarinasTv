@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BARINAS TV | Señal Oficial & Informativo BTV</title>
 
+  <!-- Evita bloqueos de hotlink por parte de servidores externos -->
+  <meta name="referrer" content="no-referrer">
+
   <!-- Motor HLS.js optimizado -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 
   <!-- Tipografía ligera Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
@@ -154,7 +157,7 @@
       color: #cbd5e1;
     }
 
-    /* ================= GRID & TARJETAS (ORDEN: TIPO / TÍTULO / NOTA / IMAGEN) ================= */
+    /* ================= GRID & TARJETAS: TIPO / TÍTULO / NOTA / IMAGEN ================= */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -185,11 +188,12 @@
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      padding: 3px 8px;
+      padding: 4px 10px;
       border-radius: 4px;
       margin-bottom: 8px;
       background: rgba(220, 38, 38, 0.15);
       color: #fca5a5;
+      letter-spacing: 0.5px;
     }
 
     /* 2. Titulo de la Noticia */
@@ -198,6 +202,7 @@
       font-weight: 800;
       line-height: 1.35;
       color: #ffffff;
+      white-space: pre-line;
     }
 
     /* 3. Noticia */
@@ -207,15 +212,19 @@
       line-height: 1.6;
       margin-bottom: 16px;
       flex-grow: 1;
+      white-space: pre-line;
     }
 
     /* 4. Imagen */
     .news-image-wrapper {
       width: 100%;
-      height: 190px;
+      height: 200px;
       border-radius: 8px;
       overflow: hidden;
-      background: #090a0f;
+      background: #0d1017;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .news-image-wrapper img {
       width: 100%;
@@ -398,7 +407,7 @@
       <div class="ad-content">Anúnciate aquí con Barinas TV &bull; Cobertura en todo el Estado</div>
     </div>
 
-    <!-- SECCIÓN INFORMATIVO BTV CONECTADA A GOOGLE SHEETS -->
+    <!-- SECCIÓN INFORMATIVO BTV (CONEXIÓN EXACTA A GOOGLE SHEETS) -->
     <section id="informativo-btv">
       <div class="section-header">
         <h2 class="section-title">Informativo BTV</h2>
@@ -416,254 +425,3 @@
       <div class="grid" id="gridNoticiasVaryna">
         <article class="news-card">
           <div class="news-header">
-            <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
-            <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
-          </div>
-          <p class="news-body">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional.</p>
-          <div class="news-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80" loading="lazy">
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- PUBLICIDAD 2 -->
-    <div class="ad-banner">
-      <span class="ad-tag">Publicidad</span>
-      <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
-    </div>
-
-    <!-- PROGRAMAS -->
-    <section id="programas">
-      <div class="section-header">
-        <h2 class="section-title">Nuestra Programación</h2>
-      </div>
-      <div class="grid" id="gridProgramas">
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag">Matutino</span>
-            <h3 class="news-title">El Mañanero Llanero</h3>
-          </div>
-          <p class="news-body">Entrevistas de actualidad, café y la mejor música de los llanos.</p>
-          <div class="news-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80" loading="lazy">
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- HORARIOS -->
-    <section id="horarios">
-      <div class="section-header">
-        <h2 class="section-title">Horarios de Emisión</h2>
-      </div>
-      <div class="schedule-list" id="listHorarios">
-        <div class="schedule-item">
-          <span class="schedule-time">07:00 AM</span>
-          <div class="schedule-info"><strong>El Mañanero Llanero</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-        </div>
-        <div class="schedule-item">
-          <span class="schedule-time">12:00 PM</span>
-          <div class="schedule-info"><strong>Informativo BTV - Meridiano</strong><br><small style="color:var(--text-muted)">Lunes a Sábado</small></div>
-        </div>
-        <div class="schedule-item">
-          <span class="schedule-time">07:00 PM</span>
-          <div class="schedule-info"><strong>Informativo BTV - Emisión Estelar</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- REPRODUCTOR EN LA ESQUINA INFERIOR DERECHA (PIP) -->
-  <div class="floating-player-box">
-    <div class="player-header">
-      <div class="live-tag">
-        <span class="pulsing-dot"></span>
-        <span>SEÑAL EN VIVO</span>
-      </div>
-      <span style="font-size: 11px; color: var(--text-muted);">BARINAS TV</span>
-    </div>
-
-    <div class="video-viewport" onclick="reproducirEnEsquina()">
-      <div class="click-to-play-overlay" id="clickPlayOverlay">
-        <div class="btn-play-trigger">
-          <div class="play-arrow"></div>
-        </div>
-        <div class="play-hint">CLIC PARA VER EN VIVO</div>
-      </div>
-
-      <video id="videoPlayer" playsinline controls></video>
-    </div>
-  </div>
-
-  <!-- ================= SCRIPT CONEXIÓN SHEETS Y REPRODUCTOR ================= -->
-  <script>
-    // 1. TU ENLACE PROPORCIONADO DIRECTAMENTE
-    const SHEET_ORIGINAL_URL = "https://docs.google.com/spreadsheets/d/1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI/edit?usp=sharing";
-
-    // Transforma el enlace de visualización a la API CSV abierta con CORS de Google
-    function obtenerUrlCSV(url) {
-      const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (idMatch && idMatch[1]) {
-        return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/gviz/tq?tqx=out:csv`;
-      }
-      return url;
-    }
-
-    const CSV_URL = obtenerUrlCSV(SHEET_ORIGINAL_URL);
-
-    // DATOS DE RESPALDO (Por si hay cortes de red o la hoja está vacía)
-    const backupInformativo = [
-      {
-        tipo: "Regional",
-        titulo: "Rehabilitación de vías agrícolas en el municipio Pedraza",
-        noticia: "Maquinaria pesada se despliega en sectores productivos para garantizar el traslado seguro de cosechas hacia los centros de acopio.",
-        imagen: "https://images.unsplash.com/photo-1584467735815-f778f274e296?w=600&q=80"
-      },
-      {
-        tipo: "Salud",
-        titulo: "Despliegue de jornada médica comunitaria en Ciudad Tavacare",
-        noticia: "Atención pediátrica, entrega gratuita de medicinas y vacunación integral beneficiaron a más de 500 familias barinesas.",
-        imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80"
-      }
-    ];
-
-    // PARSER CSV QUE RESPETA COMAS DENTRO DE TEXTOS
-    function parseCSV(text) {
-      const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-      if (lines.length <= 1) return [];
-
-      const result = [];
-      // Inicia en fila 1 para saltar la fila de encabezados
-      for (let i = 1; i < lines.length; i++) {
-        const row = [];
-        let inQuotes = false;
-        let currentValue = '';
-
-        for (let char of lines[i]) {
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            row.push(currentValue.trim());
-            currentValue = '';
-          } else {
-            currentValue += char;
-          }
-        }
-        row.push(currentValue.trim());
-
-        // Mapeo al orden: Tipo de Noticia (0) / Titulo de la Noticia (1) / Noticia (2) / Imagen (3)
-        if (row.length >= 3) {
-          result.push({
-            tipo: (row[0] || 'Informativo').replace(/^"|"$/g, ''),
-            titulo: (row[1] || 'Sin título').replace(/^"|"$/g, ''),
-            noticia: (row[2] || '').replace(/^"|"$/g, ''),
-            imagen: (row[3] || '').replace(/^"|"$/g, '')
-          });
-        }
-      }
-      return result;
-    }
-
-    // RENDERIZADOR: TIPO DE NOTICIA -> TITULO -> NOTICIA -> IMAGEN
-    function renderizarInformativoBTV(items) {
-      const container = document.getElementById('gridInformativoBTV');
-      if (!items || items.length === 0) {
-        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay noticias disponibles en la hoja de cálculo.</div>`;
-        return;
-      }
-
-      container.innerHTML = items.map(item => `
-        <article class="news-card">
-          <!-- 1. Tipo de Noticia & 2. Titulo de la Noticia -->
-          <div class="news-header">
-            <span class="news-tag">${item.tipo || 'Informativo'}</span>
-            <h3 class="news-title">${item.titulo}</h3>
-          </div>
-          <!-- 3. Noticia -->
-          <p class="news-body">${item.noticia}</p>
-          <!-- 4. Imagen -->
-          <div class="news-image-wrapper">
-            <img src="${item.imagen || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&q=80'}" alt="${item.titulo}" loading="lazy">
-          </div>
-        </article>
-      `).join('');
-    }
-
-    // PETICIÓN A GOOGLE SHEETS
-    async function cargarInformativoDesdeSheet() {
-      try {
-        const response = await fetch(CSV_URL);
-        const text = await response.text();
-        const data = parseCSV(text);
-        if (data && data.length > 0) {
-          renderizarInformativoBTV(data);
-        } else {
-          renderizarInformativoBTV(backupInformativo);
-        }
-      } catch (error) {
-        console.warn("Aviso: usando datos locales de respaldo:", error);
-        renderizarInformativoBTV(backupInformativo);
-      }
-    }
-
-    cargarInformativoDesdeSheet();
-
-    /* =========================================================================
-       REPRODUCTOR EN ESQUINA INFERIOR DERECHA (INICIA SIN PANTALLA COMPLETA)
-       ========================================================================= */
-    const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
-    const video = document.getElementById('videoPlayer');
-    const overlay = document.getElementById('clickPlayOverlay');
-    let hls = null;
-
-    function reproducirEnEsquina() {
-      if (overlay) overlay.style.display = 'none';
-
-      // 1. Safari / iOS
-      if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = streamUrl;
-        video.play().catch(e => console.log(e));
-        return;
-      }
-
-      // 2. HLS.js
-      if (Hls.isSupported() && !hls) {
-        hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: false,
-          maxBufferLength: 60,
-          maxMaxBufferLength: 120,
-          startFragPrefetch: true
-        });
-
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-          video.play().catch(e => console.log(e));
-        });
-
-        hls.on(Hls.Events.ERROR, function(event, data) {
-          if (data.fatal) {
-            switch(data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                hls.recoverMediaError();
-                break;
-              default:
-                hls.startLoad();
-                break;
-            }
-          }
-        });
-      } else if (video.paused) {
-        video.play();
-      }
-    }
-  </script>
-</body>
-</html>
