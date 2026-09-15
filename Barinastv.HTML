@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Noticias</title>
+  <title>BARINAS TV | Señal Oficial & Programación</title>
 
   <!-- Evita bloqueos de imagen por parte de servidores externos -->
   <meta name="referrer" content="no-referrer">
@@ -215,7 +215,6 @@
       text-transform: uppercase;
       padding: 4px 10px;
       border-radius: 4px;
-      margin-bottom: 10px;
       background: rgba(220, 38, 38, 0.15);
       color: #fca5a5;
       letter-spacing: 0.5px;
@@ -297,6 +296,58 @@
       align-items: center;
       gap: 5px;
       transition: color 0.2s ease;
+    }
+
+    /* ================= CARDS DE LA SECCIÓN PROGRAMAS (GOOGLE SHEETS) ================= */
+    .program-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 170px;
+      transition: all 0.25s ease;
+    }
+    .program-card.clickable {
+      cursor: pointer;
+    }
+    .program-card.clickable:hover {
+      transform: translateY(-4px);
+      border-color: rgba(220, 38, 38, 0.5);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(220, 38, 38, 0.15);
+    }
+    .program-time-pill {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--red);
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.35);
+      padding: 3px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.5px;
+    }
+    .program-footer {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .program-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 700;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .program-card:hover .program-link-btn {
+      color: #fff;
+      transform: translateX(4px);
     }
 
     /* ================= SUB-WEB DE NOTICIA ================= */
@@ -729,25 +780,13 @@
         <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
       </div>
 
-      <!-- PROGRAMAS -->
+      <!-- SECCIÓN PROGRAMAS (CONECTADA A GOOGLE SHEETS: Día / Nombre / Hora / Enlace) -->
       <section id="programas">
         <div class="section-header">
           <h2 class="section-title">Nuestra Programación</h2>
         </div>
         <div class="grid" id="gridProgramas">
-          <article class="news-card">
-            <div class="news-header">
-              <span class="news-tag">Matutino</span>
-              <h3 class="news-title">El Mañanero Llanero</h3>
-            </div>
-            <div class="news-body-container">
-              <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
-              <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&q=80" class="news-bg-img" alt="Programa">
-              <div class="news-body-overlay">
-                <p class="news-body-text">Entrevistas de actualidad, café y la mejor música de los llanos venezolanos para comenzar el día con la mejor información.</p>
-              </div>
-            </div>
-          </article>
+          <div style="color:var(--text-muted); font-size:14px;">Cargando programas oficiales...</div>
         </div>
       </section>
 
@@ -835,17 +874,19 @@
 
   <!-- SCRIPTS -->
   <script>
-    // HOJAS DE GOOGLE SHEETS
-    const NOTICIAS_SHEET_ID = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
-    const LOGO_SHEET_ID     = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
-    const REDES_SHEET_ID    = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
-    const HORARIOS_SHEET_ID = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
-    const HORARIOS_GID      = "146301221";
+    // 5 HOJAS DE GOOGLE SHEETS VINCULADAS
+    const NOTICIAS_SHEET_ID  = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
+    const LOGO_SHEET_ID      = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
+    const REDES_SHEET_ID     = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
+    const HORARIOS_SHEET_ID  = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
+    const HORARIOS_GID       = "146301221";
+    const PROGRAMAS_SHEET_ID = "1nLuBjA8uyYQn2ehHUrJdFE99Fjai24jAanQhKkCveIE";
 
-    const GVIZ_NOTICIAS_URL = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
-    const GVIZ_LOGO_URL     = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
-    const GVIZ_REDES_URL    = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
-    const GVIZ_HORARIOS_URL = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${HORARIOS_GID}`;
+    const GVIZ_NOTICIAS_URL  = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_LOGO_URL      = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_REDES_URL     = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_HORARIOS_URL  = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${HORARIOS_GID}`;
+    const GVIZ_PROGRAMAS_URL = `https://docs.google.com/spreadsheets/d/${PROGRAMAS_SHEET_ID}/gviz/tq?tqx=out:json`;
 
     const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
@@ -1150,8 +1191,112 @@
       }
     }
 
-    // ================= 4. HORARIOS: PARSER ROBUSTO DE MATRIZ SEMANAL =================
-    
+    // ================= 4. SECCIÓN PROGRAMAS (ORDEN: Día / Nombre / Hora / Enlace) =================
+    async function cargarProgramasDesdeSheet() {
+      try {
+        const response = await fetch(GVIZ_PROGRAMAS_URL);
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        if (!data.table || !data.table.rows || data.table.rows.length === 0) {
+          document.getElementById('gridProgramas').innerHTML = 
+            `<div style="color:var(--text-muted); font-size:14px;">No hay programas registrados en la hoja de cálculo.</div>`;
+          return;
+        }
+
+        const rows = data.table.rows;
+        let colDia = 0, colNombre = 1, colHora = 2, colEnlace = 3;
+        let startIndex = 0;
+
+        // Comprueba si la primera fila son encabezados
+        if (rows.length > 0 && rows[0].c) {
+          const v0 = String(rows[0].c[0]?.v || '').toLowerCase();
+          const v1 = String(rows[0].c[1]?.v || '').toLowerCase();
+          if (v0.includes('dia') || v1.includes('nombre') || v1.includes('programa')) {
+            startIndex = 1;
+          }
+        }
+
+        const listaProgramas = [];
+        for (let i = startIndex; i < rows.length; i++) {
+          const cells = rows[i].c;
+          if (!cells) continue;
+
+          const dia = String(cells[colDia]?.v ?? '').trim();
+          const nombre = String(cells[colNombre]?.v ?? '').trim();
+          let hora = '';
+          if (cells[colHora]) {
+            hora = cells[colHora].f ? String(cells[colHora].f).trim() : String(cells[colHora].v ?? '').trim();
+          }
+          const enlaceRaw = String(cells[colEnlace]?.v ?? '').trim();
+
+          if (dia || nombre || hora) {
+            listaProgramas.push({
+              dia: dia || 'Programación',
+              nombre: nombre || 'Sin título',
+              hora: hora,
+              enlace: enlaceRaw
+            });
+          }
+        }
+
+        renderizarProgramas(listaProgramas);
+      } catch (e) {
+        console.warn("Error cargando programas:", e);
+        document.getElementById('gridProgramas').innerHTML = 
+          `<div style="color:var(--text-muted); font-size:14px;">Error al conectar con la hoja de programas.</div>`;
+      }
+    }
+
+    function renderizarProgramas(items) {
+      const container = document.getElementById('gridProgramas');
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay programas disponibles.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const tieneEnlace = Boolean(item.enlace && item.enlace.startsWith('http'));
+        const esImagen = tieneEnlace && /\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/i.test(item.enlace);
+
+        return `
+          <article class="program-card ${tieneEnlace ? 'clickable' : ''}" 
+                   ${tieneEnlace ? `onclick="window.open('${item.enlace}', '_blank')"` : ''}>
+            <div class="news-header">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                <span class="news-tag">${item.dia}</span>
+                ${item.hora ? `<span class="program-time-pill">${item.hora}</span>` : ''}
+              </div>
+              <h3 class="news-title">${item.nombre}</h3>
+            </div>
+
+            ${esImagen ? `
+              <div style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; margin-top: 10px; background: #000;">
+                <img src="${item.enlace}" alt="${item.nombre}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy" referrerpolicy="no-referrer">
+              </div>
+            ` : ''}
+
+            <div class="program-footer">
+              ${tieneEnlace && !esImagen ? `
+                <div class="program-link-btn">
+                  <span>Ver Programa</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </div>
+              ` : `
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Emisión oficial BTV</div>
+              `}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // ================= 5. HORARIOS: PARRILLA DE PROGRAMACIÓN =================
     function normalizarTexto(txt) {
       return String(txt || '')
         .toLowerCase()
@@ -1187,7 +1332,6 @@
 
         const rows = data.table.rows;
 
-        // 1. Localizar la fila 5 de los días (o la que contenga LUNES / MARTES / MIERCOLES)
         let filaEncabezados = 4; // Fila 5 de Excel (0-based)
         for (let r = 0; r < Math.min(rows.length, 10); r++) {
           const texto = (rows[r].c || []).map(c => normalizarTexto(c?.v)).join(' ');
@@ -1199,7 +1343,6 @@
 
         const celdasFila5 = rows[filaEncabezados]?.c || [];
 
-        // 2. Mapeo estricto de las columnas de días
         const DIAS_ORDEN = [
           { clave: 'lunes',     nombre: 'LUNES' },
           { clave: 'martes',    nombre: 'MARTES' },
@@ -1232,7 +1375,6 @@
           }
         });
 
-        // Ordenar las columnas de LUNES a DOMINGO
         diasColumnas.sort((a, b) => {
           return DIAS_ORDEN.findIndex(d => d.clave === a.clave) - DIAS_ORDEN.findIndex(d => d.clave === b.clave);
         });
@@ -1243,13 +1385,11 @@
           return;
         }
 
-        // Inicializar contenedor de cada día
         horariosGlobalesPorDia = {};
         diasColumnas.forEach(d => {
           horariosGlobalesPorDia[d.nombreDia] = [];
         });
 
-        // 3. Seguimiento cronológico para resolver AM / PM sin confundir las 6:00
         let esTardeNoche = false;
         let ultimaHoraDetectada = 0;
 
@@ -1260,14 +1400,12 @@
           let h = parseInt(match[1], 10);
           const m = match[2];
 
-          // Detección del mediodía (12:00)
           if (h === 12 && !esTardeNoche && ultimaHoraDetectada >= 11) {
             esTardeNoche = true;
           }
 
           let ampm = esTardeNoche ? 'PM' : 'AM';
 
-          // Si el horario vuelve a la madrugada (12:00 AM o 1:00 AM tras la medianoche)
           if (esTardeNoche && h === 12 && ultimaHoraDetectada === 11) {
             ampm = 'AM';
             esTardeNoche = false;
@@ -1277,12 +1415,10 @@
           return `${h}:${m} ${ampm}`;
         }
 
-        // 4. Lectura fila a fila con propagación de celdas combinadas horizontalmente
         for (let i = filaEncabezados + 1; i < rows.length; i++) {
           const cells = rows[i].c;
           if (!cells) continue;
 
-          // Extraer hora de Columna A (o Columna L si Columna A viniera vacía)
           let horaString = extraerHoraRaw(cells[0]);
           if (!horaString && colHoraFin > 0) {
             horaString = extraerHoraRaw(cells[colHoraFin]);
@@ -1291,10 +1427,6 @@
           if (!horaString) continue;
 
           const horaFinal = resolverAMPM(horaString);
-
-          // PROPAGACIÓN HORIZONTAL:
-          // Si un bloque está combinado de Lunes a Viernes o Sábado a Domingo,
-          // el programa se propaga a los días siguientes que estén vacíos en esa fila.
           let programaEnFila = '';
 
           for (let d of diasColumnas) {
@@ -1308,8 +1440,6 @@
               const listaDia = horariosGlobalesPorDia[d.nombreDia];
               const ultimo = listaDia[listaDia.length - 1];
 
-              // EVITAR DUPLICADOS VERTICALES:
-              // Solo agrega si cambia el programa (inicio de una nueva emisión)
               if (!ultimo || ultimo.programa !== programaEnFila) {
                 listaDia.push({
                   hora: horaFinal,
@@ -1324,7 +1454,7 @@
         renderizarPestañasYHorarios(diasColumnas);
 
       } catch (e) {
-        console.warn("Error cargando parrilla de horarios:", e);
+        console.warn("Error cargando horarios:", e);
         document.getElementById('listHorarios').innerHTML = 
           `<div style="color:var(--text-muted); font-size:14px;">Error al conectar con la hoja de horarios.</div>`;
       }
@@ -1381,10 +1511,11 @@
       `).join('');
     }
 
-    // Inicializar cargas
+    // Inicializar cargas de las 5 hojas de Google Sheets
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
+    cargarProgramasDesdeSheet();
     cargarHorariosDesdeSheet();
 
     /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
