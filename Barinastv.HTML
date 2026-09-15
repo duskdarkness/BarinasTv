@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BARINAS TV | Señal Oficial & Noticias</title>
+
+  <!-- Motor HLS.js optimizado -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+
+  <!-- Tipografía ligera Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --red: #dc2626;
+      --red-hover: #b91c1c;
+      --bg: #090a0f;
+      --surface: #12151e;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ================= BARRA SUPERIOR Y REDES ================= */
+    .top-bar {
+      background: #050608;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .top-bar-left {
+      color: var(--text-muted);
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    .social-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .social-btn {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      transition: color 0.2s ease;
+    }
+    .social-btn:hover { color: var(--red); }
+
+    /* ================= HEADER ================= */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(9, 10, 15, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-badge {
+      background: var(--red);
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #fff; }
+
+    /* ================= CONTENEDOR GENERAL ================= */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px 120px;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      border-left: 4px solid var(--red);
+      padding-left: 12px;
+    }
+
+    /* ESPACIO PUBLICITARIO */
+    .ad-banner {
+      width: 100%;
+      background: #11141d;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 24px 15px;
+      text-align: center;
+      margin: 30px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90px;
+    }
+    .ad-tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .ad-content {
+      font-size: 15px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    /* ================= TARJETAS: TÍTULO / NOTA / IMAGEN ================= */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 45px;
+    }
+    .news-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .news-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(220, 38, 38, 0.4);
+    }
+
+    /* 1. TÍTULO Y CATEGORÍA */
+    .news-header {
+      margin-bottom: 12px;
+    }
+    .news-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .tag-red { background: rgba(220, 38, 38, 0.15); color: #fca5a5; }
+    .tag-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+    .news-title {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.35;
+      color: #ffffff;
+    }
+
+    /* 2. NOTA / CONTENIDO */
+    .news-body {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    /* 3. IMAGEN (AL FINAL) */
+    .news-image-wrapper {
+      width: 100%;
+      height: 190px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #090a0f;
+    }
+    .news-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .news-card:hover .news-image-wrapper img {
+      transform: scale(1.04);
+    }
+
+    /* SECCIÓN HORARIOS */
+    .schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .schedule-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      border-radius: 8px;
+    }
+    .schedule-time {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--red);
+      min-width: 110px;
+    }
+    .schedule-info { flex-grow: 1; margin-left: 15px; }
+
+    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
+    .floating-player-box {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 370px;
+      max-width: calc(100vw - 32px);
+      background: #0f121a;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(220, 38, 38, 0.2);
+      z-index: 100;
+    }
+    .player-header {
+      background: #161b26;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .live-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fca5a5;
+    }
+    .pulsing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    .video-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      cursor: pointer;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Carátula clic para reproducir en miniatura */
+    .click-to-play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 13, 20, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .click-to-play-overlay:hover {
+      background: rgba(10, 13, 20, 0.7);
+    }
+    .btn-play-trigger {
+      width: 52px;
+      height: 52px;
+      background: var(--red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--red);
+      margin-bottom: 8px;
+      transition: transform 0.2s;
+    }
+    .click-to-play-overlay:hover .btn-play-trigger {
+      transform: scale(1.08);
+    }
+    .play-arrow {
+      width: 0; height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 12px solid white;
+      margin-left: 3px;
+    }
+    .play-hint {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. REDES SOCIALES EN LA PARTE SUPERIOR (CONFIGURABLES VÍA EXCEL) -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span>Barinas, Venezuela &bull; Señal Digital</span>
+    </div>
+    <div class="social-links" id="socialLinksContainer">
+      <a href="#" id="link-facebook" class="social-btn" target="_blank">Facebook</a>
+      <a href="#" id="link-instagram" class="social-btn" target="_blank">Instagram</a>
+      <a href="#" id="link-x" class="social-btn" target="_blank">X (Twitter)</a>
+      <a href="#" id="link-youtube" class="social-btn" target="_blank">YouTube</a>
+      <a href="#" id="link-whatsapp" class="social-btn" target="_blank">WhatsApp</a>
+    </div>
+  </div>
+
+  <!-- 2. HEADER -->
+  <header>
+    <div class="brand-container">
+      <span class="brand-badge">BTV</span>
+      <span class="brand-title">BARINAS TV</span>
+    </div>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="#informativo">Informativo</a></li>
+        <li><a href="#noticias-varyna">Noticias Varyna</a></li>
+        <li><a href="#programas">Programas</a></li>
+        <li><a href="#horarios">Horarios</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- ESPACIO PUBLICITARIO 1 -->
+    <div class="ad-banner">
+      <span class="ad-tag">Espacio Publicitario</span>
+      <div class="ad-content">Tu Empresa o Marca Aquí — Anúnciate en Barinas TV</div>
+    </div>
+
+    <!-- SECCIÓN 1: INFORMATIVO (ORDEN: TÍTULO / NOTA / IMAGEN) -->
+    <section id="informativo">
+      <div class="section-header">
+        <h2 class="section-title">Informativo Barinas</h2>
+      </div>
+      <div class="grid" id="gridInformativo">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: NOTICIAS VARYNA (ORDEN: TÍTULO / NOTA / IMAGEN) -->
+    <section id="noticias-varyna">
+      <div class="section-header">
+        <h2 class="section-title">Noticias Varyna</h2>
+      </div>
+      <div class="grid" id="gridNoticiasVaryna">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- ESPACIO PUBLICITARIO 2 -->
+    <div class="ad-banner">
+      <span class="ad-tag">Publicidad</span>
+      <div class="ad-content">Llega a miles de hogares en todo el estado Barinas</div>
+    </div>
+
+    <!-- SECCIÓN 3: PROGRAMAS -->
+    <section id="programas">
+      <div class="section-header">
+        <h2 class="section-title">Nuestra Programación</h2>
+      </div>
+      <div class="grid" id="gridProgramas">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: HORARIOS -->
+    <section id="horarios">
+      <div class="section-header">
+        <h2 class="section-title">Horarios de Emisión</h2>
+      </div>
+      <div class="schedule-list" id="listHorarios">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= -->
+  <div class="floating-player-box">
+    <div class="player-header">
+      <div class="live-tag">
+        <span class="pulsing-dot"></span>
+        <span>SEÑAL EN VIVO</span>
+      </div>
+      <span style="font-size: 11px; color: var(--text-muted);">BARINAS TV</span>
+    </div>
+
+    <div class="video-viewport" onclick="reproducirEnEsquina()">
+      <!-- Clic aquí inicia el video en la esquina sin pantalla completa -->
+      <div class="click-to-play-overlay" id="clickPlayOverlay">
+        <div class="btn-play-trigger">
+          <div class="play-arrow"></div>
+        </div>
+        <div class="play-hint">CLIC PARA VER EN VIVO</div>
+      </div>
+
+      <video id="videoPlayer" playsinline controls></video>
+    </div>
+  </div>
+
+  <!-- ================= LÓGICA DE DATOS (EXCEL READY) Y REPRODUCTOR ================= -->
+  <script>
+    /* =========================================================================
+       CONFIGURACIÓN DE EXCEL:
+       Para conectar con Google Sheets/Excel:
+       1. Publica tu hoja como CSV (Archivo > Compartir > Publicar en la web > CSV).
+       2. Pega el enlace aquí abajo en SHEET_CSV_URL.
+       ========================================================================= */
+    const SHEET_CSV_URL = "";
+
+    // DATOS DE RESPALDO CON EL ORDEN: Título / Nota / Imagen
+    const backupData = {
+      redes: {
+        facebook: "https://facebook.com",
+        instagram: "https://instagram.com",
+        x: "https://x.com",
+        youtube: "https://youtube.com",
+        whatsapp: "https://whatsapp.com"
+      },
+      informativo: [
+        {
+          titulo: "Rehabilitación de vías agrícolas en el municipio Pedraza",
+          nota: "Maquinaria pesada se despliega en sectores productivos para garantizar el traslado seguro de cosechas hacia los centros de acopio.",
+          imagen: "https://images.unsplash.com/photo-1584467735815-f778f274e296?w=600&q=80",
+          tag: "Vialidad"
+        },
+        {
+          titulo: "Despliegue de jornada médica comunitaria en Ciudad Tavacare",
+          nota: "Atención pediátrica, entrega gratuita de medicinas y vacunación integral beneficiaron a más de 500 familias barinesas.",
+          imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80",
+          tag: "Salud"
+        },
+        {
+          titulo: "Monitoreo preventivo del caudal de los ríos tras lluvias",
+          nota: "Protección Civil se mantiene alerta en los ejes llaneros ante el aumento estacionario en los niveles de agua.",
+          imagen: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80",
+          tag: "Prevención"
+        }
+      ],
+      noticiasVaryna: [
+        {
+          titulo: "Productores de Varyna incrementan producción de queso llanero",
+          nota: "Nuevos esquemas de financiamiento fortalecen la cadena de lácteos y el suministro en los mercados locales.",
+          imagen: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80",
+          tag: "Economía"
+        },
+        {
+          titulo: "Festival de joropo y arpa en honor a nuestras raíces llaneras",
+          nota: "Músicos y bailadores de toda la región se dieron cita en un encuentro lleno de color, tradición y folclore venezolano.",
+          imagen: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80",
+          tag: "Cultura"
+        }
+      ],
+      programas: [
+        {
+          nombre: "El Mañanero Llanero",
+          desc: "Café, entrevistas, análisis de la actualidad y la mejor música de nuestros llanos para iniciar tu jornada.",
+          imagen: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80",
+          tag: "Matutino"
+        },
+        {
+          nombre: "Noticias Barinas TV",
+          desc: "Reportajes en profundidad, móviles en vivo y el balance informativo veraz de todo el acontecer regional.",
+          imagen: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=600&q=80",
+          tag: "Noticiero"
+        }
+      ],
+      horarios: [
+        { hora: "07:00 AM - 09:00 AM", programa: "El Mañanero Llanero", dias: "Lunes a Viernes" },
+        { hora: "12:00 PM - 01:00 PM", programa: "Noticias Barinas TV - Emisión Meridiana", dias: "Lunes a Sábado" },
+        { hora: "07:00 PM - 08:30 PM", programa: "Noticias Barinas TV - Emisión Estelar", dias: "Lunes a Viernes" },
+        { hora: "09:00 PM - 10:30 PM", programa: "Pasión Deportiva Llanera", dias: "Martes y Jueves" }
+      ]
+    };
+
+    // RENDERIZADO CON LA ESTRUCTURA: TÍTULO -> NOTA -> IMAGEN
+    function renderizarPagina(data) {
+      // 1. Redes Sociales
+      if (data.redes) {
+        if (data.redes.facebook) document.getElementById('link-facebook').href = data.redes.facebook;
+        if (data.redes.instagram) document.getElementById('link-instagram').href = data.redes.instagram;
+        if (data.redes.x) document.getElementById('link-x').href = data.redes.x;
+        if (data.redes.youtube) document.getElementById('link-youtube').href = data.redes.youtube;
+        if (data.redes.whatsapp) document.getElementById('link-whatsapp').href = data.redes.whatsapp;
+      }
+
+      // 2. Informativo (Título -> Nota -> Imagen)
+      document.getElementById('gridInformativo').innerHTML = data.informativo.map(item => `
+        <article class="news-card">
+          <div class="news-header">
+            <span class="news-tag tag-red">${item.tag || 'Informativo'}</span>
+            <h3 class="news-title">${item.titulo}</h3>
+          </div>
+          <p class="news-body">${item.nota}</p>
+          <div class="news-image-wrapper">
+            <img src="${item.imagen}" alt="${item.titulo}" loading="lazy">
+          </div>
+        </article>
+      `).join('');
+
+      // 3. Noticias Varyna (Título -> Nota -> Imagen)
+      document.getElementById('gridNoticiasVaryna').innerHTML = data.noticiasVaryna.map(item => `
+        <article class="news-card">
+          <div class="news-header">
+            <span class="news-tag tag-blue">${item.tag || 'Varyna'}</span>
+            <h3 class="news-title">${item.titulo}</h3>
+          </div>
+          <p class="news-body">${item.nota}</p>
+          <div class="news-image-wrapper">
+            <img src="${item.imagen}" alt="${item.titulo}" loading="lazy">
+          </div>
+        </article>
+      `).join('');
+
+      // 4. Programas (Título -> Descripción -> Imagen)
+      document.getElementById('gridProgramas').innerHTML = data.programas.map(prog => `
+        <article class="news-card">
+          <div class="news-header">
+            <span class="news-tag tag-red">${prog.tag || 'Programa'}</span>
+            <h3 class="news-title">${prog.nombre}</h3>
+          </div>
+          <p class="news-body">${prog.desc}</p>
+          <div class="news-image-wrapper">
+            <img src="${prog.imagen}" alt="${prog.nombre}" loading="lazy">
+          </div>
+        </article>
+      `).join('');
+
+      // 5. Horarios
+      document.getElementById('listHorarios').innerHTML = data.horarios.map(h => `
+        <div class="schedule-item">
+          <span class="schedule-time">${h.hora}</span>
+          <div class="schedule-info">
+            <div style="font-weight:700;">${h.programa}</div>
+            <small style="color:var(--text-muted);">${h.dias}</small>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // CARGA DE DATOS (CSV o LOCAL)
+    async function cargarDatos() {
+      if (!SHEET_CSV_URL) {
+        renderizarPagina(backupData);
+        return;
+      }
+      try {
+        const res = await fetch(SHEET_CSV_URL);
+        const text = await res.text();
+        renderizarPagina(backupData);
+      } catch (e) {
+        renderizarPagina(backupData);
+      }
+    }
+    cargarDatos();
+
+    /* =========================================================================
+       REPRODUCTOR HLS ESQUINA DERECHA (INICIA CON UN CLIC SIN SALIR DE LA PÁGINA)
+       ========================================================================= */
+    const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
+    const video = document.getElementById('videoPlayer');
+    const overlay = document.getElementById('clickPlayOverlay');
+    let hls = null;
+
+    function reproducirEnEsquina() {
+      if (overlay) overlay.style.display = 'none';
+
+      // 1. Safari / iOS
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = streamUrl;
+        video.play().catch(e => console.log(e));
+        return;
+      }
+
+      // 2. HLS.js
+      if (Hls.isSupported() && !hls) {
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 60,
+          maxMaxBufferLength: 120,
+          startFragPrefetch: true
+        });
+
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+          video.play().catch(e => console.log(e));
+        });
+
+        hls.on(Hls.Events.ERROR, function(event, data) {
+          if (data.fatal) {
+            switch(data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                hls.recoverMediaError();
+                break;
+              default:
+                hls.startLoad();
+                break;
+            }
+          }
+        });
+      } else if (video.paused) {
+        video.play();
+      }
+    }
+  </script>
+</body>
+</html>
