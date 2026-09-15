@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Programación</title>
+  <title>BARINAS TV | Señal Oficial & Noticias</title>
 
-  <!-- Evita bloqueos de imagen por parte de servidores externos -->
+  <!-- Evita bloqueos de imagen y recursos por parte de servidores externos -->
   <meta name="referrer" content="no-referrer">
 
   <!-- Motor HLS.js optimizado -->
@@ -30,12 +30,37 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ================= TEXTO GENERAL NO CLICKEABLE (UNCLICKABLE) ================= */
     body {
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
+      user-select: none; /* Evita selección o clics accidentales de texto */
+      cursor: default;   /* Cursor normal en todo el contenido */
+    }
+
+    /* Permite lectura natural únicamente dentro de los artículos de noticias */
+    .article-body-content, .news-body-text {
+      user-select: text;
+      cursor: text;
+    }
+
+    /* SOLO LOS ELEMENTOS ESPECÍFICOS SON CLICKEABLES */
+    button, 
+    .clickable, 
+    .news-card, 
+    .program-card, 
+    .day-tab-btn, 
+    .social-btn:not(.disabled), 
+    .brand-container, 
+    .video-viewport, 
+    .btn-back,
+    .recent-item,
+    .modal-close-btn,
+    .pdf-open-ext {
+      cursor: pointer !important;
     }
 
     a { color: inherit; text-decoration: none; }
@@ -69,12 +94,12 @@
     .social-btn:hover:not(.disabled) { color: var(--red); }
     .social-btn.disabled {
       opacity: 0.35;
-      cursor: default;
+      cursor: default !important;
       pointer-events: none;
       user-select: none;
     }
 
-    /* ================= HEADER & LOGO ================= */
+    /* ================= HEADER & LOGO + BANNER ================= */
     header {
       position: sticky;
       top: 0;
@@ -82,7 +107,7 @@
       background: rgba(9, 10, 15, 0.95);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
+      padding: 10px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -91,7 +116,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      cursor: pointer;
+      flex-wrap: nowrap;
     }
     #brandLogoContainer {
       display: flex;
@@ -118,6 +143,20 @@
       font-size: 18px;
       font-weight: 800;
       letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    /* Banner al lado del logo */
+    #brandBannerContainer {
+      display: flex;
+      align-items: center;
+      margin-left: 8px;
+    }
+    .brand-banner-img {
+      height: 38px;
+      max-width: 260px;
+      object-fit: contain;
+      display: block;
+      border-radius: 4px;
     }
     .nav-links {
       display: flex;
@@ -128,10 +167,8 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--text-muted);
-      cursor: pointer;
-      transition: color 0.2s;
+      cursor: default; /* No clickeable como solicitado */
     }
-    .nav-links a:hover { color: #fff; }
 
     /* ================= CONTENEDOR GENERAL ================= */
     .container {
@@ -180,7 +217,7 @@
       color: #cbd5e1;
     }
 
-    /* ================= GRILLA DE NOTICIAS ================= */
+    /* ================= GRILLA DE NOTICIAS & CARDS ================= */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -197,7 +234,6 @@
       justify-content: space-between;
       transition: transform 0.2s ease, border-color 0.2s ease;
       position: relative;
-      cursor: pointer;
     }
     .news-card:hover {
       transform: translateY(-4px);
@@ -298,7 +334,32 @@
       transition: color 0.2s ease;
     }
 
-    /* ================= CARDS DE LA SECCIÓN PROGRAMAS ================= */
+    /* ================= CARDS DE NOTICIAS VARYNA (PDF READY) ================= */
+    .pdf-badge {
+      background: rgba(37, 99, 235, 0.18);
+      color: #93c5fd;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+    }
+    .btn-pdf-action {
+      background: var(--red);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      border: none;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .news-card:hover .btn-pdf-action {
+      background: #ef4444;
+      transform: translateX(3px);
+    }
+
+    /* ================= CARDS DE PROGRAMAS ================= */
     .program-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -309,9 +370,6 @@
       justify-content: space-between;
       min-height: 180px;
       transition: all 0.25s ease;
-    }
-    .program-card.clickable {
-      cursor: pointer;
     }
     .program-card.clickable:hover {
       transform: translateY(-4px);
@@ -328,8 +386,6 @@
       border-radius: 99px;
       letter-spacing: 0.5px;
     }
-
-    /* Miniatura de video de YouTube */
     .program-thumbnail-wrapper {
       position: relative;
       width: 100%;
@@ -350,8 +406,6 @@
     .program-card:hover .program-thumbnail-wrapper img {
       transform: scale(1.06);
     }
-    
-    /* Botón play sobre la miniatura */
     .yt-play-badge {
       position: absolute;
       top: 50%;
@@ -372,7 +426,6 @@
       transform: translate(-50%, -50%) scale(1.15);
       background: #ff0000;
     }
-
     .program-footer {
       margin-top: 14px;
       padding-top: 12px;
@@ -390,19 +443,11 @@
       font-weight: 700;
       transition: transform 0.2s ease, color 0.2s ease;
     }
-    .program-link-btn.yt-btn {
-      color: #f87171;
-    }
-    .program-card:hover .program-link-btn.yt-btn {
-      color: #ff4d4d;
-      transform: translateX(4px);
-    }
-    .program-card:hover .program-link-btn:not(.yt-btn) {
-      color: #fff;
-      transform: translateX(4px);
-    }
+    .program-link-btn.yt-btn { color: #f87171; }
+    .program-card:hover .program-link-btn.yt-btn { color: #ff4d4d; transform: translateX(4px); }
+    .program-card:hover .program-link-btn:not(.yt-btn) { color: #fff; transform: translateX(4px); }
 
-    /* ================= SUB-WEB DE NOTICIA ================= */
+    /* ================= SUB-WEB DE NOTICIA INDIVIDUAL ================= */
     #vista-noticia {
       display: none;
       animation: fadeIn 0.3s ease;
@@ -411,7 +456,6 @@
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     .btn-back {
       display: inline-flex;
       align-items: center;
@@ -423,7 +467,6 @@
       border-radius: 8px;
       font-size: 13px;
       font-weight: 700;
-      cursor: pointer;
       margin-bottom: 24px;
       transition: all 0.2s ease;
     }
@@ -432,7 +475,6 @@
       color: white;
       border-color: var(--red);
     }
-
     .article-layout {
       display: grid;
       grid-template-columns: 2.2fr 1fr;
@@ -475,7 +517,6 @@
       color: #cbd5e1;
       white-space: pre-line;
     }
-
     .article-sidebar {
       display: flex;
       flex-direction: column;
@@ -504,13 +545,9 @@
       gap: 12px;
       padding-bottom: 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      cursor: pointer;
       transition: transform 0.2s ease;
     }
-    .recent-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
+    .recent-item:last-child { border-bottom: none; padding-bottom: 0; }
     .recent-item:hover { transform: translateX(4px); }
     .recent-item:hover .recent-item-title { color: var(--red); }
     .recent-thumb {
@@ -544,7 +581,6 @@
       overflow: hidden;
       transition: color 0.2s ease;
     }
-
     .related-section {
       margin-top: 40px;
       border-top: 1px solid var(--border);
@@ -568,7 +604,6 @@
       border-radius: 99px;
       font-size: 13px;
       font-weight: 800;
-      cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s ease;
       letter-spacing: 0.5px;
@@ -583,7 +618,6 @@
       border-color: var(--red);
       box-shadow: 0 0 16px rgba(220, 38, 38, 0.45);
     }
-
     .schedule-list {
       display: flex;
       flex-direction: column;
@@ -604,9 +638,7 @@
       border-color: rgba(220, 38, 38, 0.4);
       transform: translateX(4px);
     }
-    .schedule-time-badge {
-      min-width: 140px;
-    }
+    .schedule-time-badge { min-width: 140px; }
     .schedule-time {
       font-weight: 800;
       font-size: 14px;
@@ -618,10 +650,7 @@
       display: inline-block;
       letter-spacing: 0.5px;
     }
-    .schedule-info {
-      flex-grow: 1;
-      margin-left: 20px;
-    }
+    .schedule-info { flex-grow: 1; margin-left: 20px; }
     .schedule-prog-title {
       font-size: 16px;
       font-weight: 800;
@@ -634,6 +663,82 @@
       margin-top: 3px;
       display: block;
       font-weight: 600;
+    }
+
+    /* ================= MODAL VISOR DE PDF INTEGRADO ================= */
+    .pdf-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .pdf-modal-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .pdf-modal-window {
+      width: 100%;
+      max-width: 1060px;
+      height: 90vh;
+      background: #0f131c;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(220, 38, 38, 0.2);
+    }
+    .pdf-modal-header {
+      background: #161b26;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pdf-modal-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pdf-modal-body {
+      flex: 1;
+      background: #06080d;
+      position: relative;
+    }
+    .pdf-modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: #cbd5e1;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s ease;
+    }
+    .modal-close-btn:hover {
+      background: var(--red);
+      color: white;
     }
 
     /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
@@ -676,13 +781,11 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.3; transform: scale(0.8); }
     }
-
     .video-viewport {
       position: relative;
       width: 100%;
       aspect-ratio: 16/9;
       background: #000;
-      cursor: pointer;
     }
     video {
       width: 100%;
@@ -690,7 +793,6 @@
       display: block;
       object-fit: contain;
     }
-
     .click-to-play-overlay {
       position: absolute;
       inset: 0;
@@ -700,12 +802,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       transition: background 0.2s;
     }
-    .click-to-play-overlay:hover {
-      background: rgba(10, 13, 20, 0.7);
-    }
+    .click-to-play-overlay:hover { background: rgba(10, 13, 20, 0.7); }
     .btn-play-trigger {
       width: 52px;
       height: 52px;
@@ -718,9 +817,7 @@
       margin-bottom: 8px;
       transition: transform 0.2s;
     }
-    .click-to-play-overlay:hover .btn-play-trigger {
-      transform: scale(1.08);
-    }
+    .click-to-play-overlay:hover .btn-play-trigger { transform: scale(1.08); }
     .play-arrow {
       width: 0; height: 0;
       border-top: 7px solid transparent;
@@ -739,6 +836,7 @@
       .article-layout { grid-template-columns: 1fr; }
       .article-main { padding: 20px; }
       .nav-links { display: none; }
+      .brand-banner-img { max-width: 160px; }
       .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
       .grid { grid-template-columns: 1fr; }
       .schedule-item { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -764,20 +862,22 @@
     </div>
   </div>
 
-  <!-- HEADER FIJO CON LOGO -->
+  <!-- HEADER FIJO CON LOGO + BANNER BARINAS TV -->
   <header>
     <div class="brand-container" onclick="volverInicio()">
       <div id="brandLogoContainer">
         <div class="logo-box">BTV</div>
       </div>
       <span class="brand-title">BARINAS TV</span>
+      <!-- BANNER CARGADO DINÁMICAMENTE DESDE GOOGLE SHEETS -->
+      <div id="brandBannerContainer"></div>
     </div>
     <nav>
       <ul class="nav-links">
-        <li><a onclick="volverInicio()">Informativo BTV</a></li>
-        <li><a href="#noticias-varyna">Noticias Varyna</a></li>
-        <li><a href="#programas">Programas</a></li>
-        <li><a href="#horarios">Horarios</a></li>
+        <li><a>Informativo BTV</a></li>
+        <li><a>Noticias Varyna</a></li>
+        <li><a>Programas</a></li>
+        <li><a>Horarios</a></li>
       </ul>
     </nav>
   </header>
@@ -804,25 +904,13 @@
         </div>
       </section>
 
-      <!-- NOTICIAS VARYNA -->
+      <!-- SECCIÓN NOTICIAS VARYNA (CONECTADA A GOOGLE SHEETS + VISOR PDF) -->
       <section id="noticias-varyna">
         <div class="section-header">
-          <h2 class="section-title">Noticias Varyna</h2>
+          <h2 class="section-title">Noticias Varyna (Edición Digital)</h2>
         </div>
         <div class="grid" id="gridNoticiasVaryna">
-          <article class="news-card">
-            <div class="news-header">
-              <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
-              <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
-            </div>
-            <div class="news-body-container">
-              <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-blur" alt="Fondo" aria-hidden="true">
-              <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80" class="news-bg-img" alt="Foto Noticia">
-              <div class="news-body-overlay">
-                <p class="news-body-text">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional y fortalecer la economía de los pequeños y medianos productores.</p>
-              </div>
-            </div>
-          </article>
+          <div style="color:var(--text-muted); font-size:14px;">Cargando ediciones de Noticias Varyna...</div>
         </div>
       </section>
 
@@ -832,7 +920,7 @@
         <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
       </div>
 
-      <!-- SECCIÓN PROGRAMAS (CONECTADA A GOOGLE SHEETS: Día / Nombre / Hora / Enlace a YouTube) -->
+      <!-- SECCIÓN PROGRAMAS -->
       <section id="programas">
         <div class="section-header">
           <h2 class="section-title">Nuestra Programación</h2>
@@ -842,18 +930,16 @@
         </div>
       </section>
 
-      <!-- SECCIÓN HORARIOS (PARRILLA SEMANAL DE GOOGLE SHEETS) -->
+      <!-- SECCIÓN HORARIOS (PARRILLA SEMANAL) -->
       <section id="horarios">
         <div class="section-header">
           <h2 class="section-title">Horarios de Emisión</h2>
         </div>
 
-        <!-- Pestañas de Días de la Semana (Lunes a Domingo) -->
         <div class="schedule-days-tabs" id="scheduleTabs">
           <div style="font-size:13px; color:var(--text-muted);">Cargando programación semanal...</div>
         </div>
 
-        <!-- Lista de Programas del Día Seleccionado -->
         <div class="schedule-list" id="listHorarios">
           <div style="font-size:13px; color:var(--text-muted);">Cargando parrilla...</div>
         </div>
@@ -902,6 +988,25 @@
 
   </main>
 
+  <!-- ================= MODAL VISOR DE PDF INTEGRADO EN LA WEB ================= -->
+  <div id="modalVisorPDF" class="pdf-modal-backdrop" onclick="cerrarVisorPDFSiFondo(event)">
+    <div class="pdf-modal-window">
+      <div class="pdf-modal-header">
+        <div class="pdf-modal-title">
+          <span class="news-tag" style="background:rgba(220,38,38,0.25); color:#fca5a5;">PDF</span>
+          <span id="pdfModalTitulo">Leyendo Edición Digital</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <a id="pdfModalExterno" href="#" target="_blank" class="pdf-open-ext" title="Abrir en pestaña nueva" style="color:var(--text-muted); font-size:13px; font-weight:700;">Abrir ↗</a>
+          <button class="modal-close-btn" onclick="cerrarVisorPDF()" title="Cerrar">&times;</button>
+        </div>
+      </div>
+      <div class="pdf-modal-body">
+        <iframe id="pdfIframe" src="" allow="autoplay"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= -->
   <div class="floating-player-box">
     <div class="player-header">
@@ -933,12 +1038,16 @@
     const HORARIOS_SHEET_ID  = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
     const HORARIOS_GID       = "146301221";
     const PROGRAMAS_SHEET_ID = "1nLuBjA8uyYQn2ehHUrJdFE99Fjai24jAanQhKkCveIE";
+    const VARYNA_SHEET_ID    = "1z7pdLJAdzHpPmbht-LHI2KloIXnvFEedkeZRogoGIwM";
+    const BANNER_SHEET_ID    = "1pKGeTqc81WT_vIYiMCJ4nmTTFMLhBVwXHLtOGsFEWWY";
 
     const GVIZ_NOTICIAS_URL  = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_LOGO_URL      = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_REDES_URL     = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_HORARIOS_URL  = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${HORARIOS_GID}`;
     const GVIZ_PROGRAMAS_URL = `https://docs.google.com/spreadsheets/d/${PROGRAMAS_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_VARYNA_URL    = `https://docs.google.com/spreadsheets/d/${VARYNA_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_BANNER_URL    = `https://docs.google.com/spreadsheets/d/${BANNER_SHEET_ID}/gviz/tq?tqx=out:json`;
 
     const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
@@ -970,7 +1079,6 @@
       return url;
     }
 
-    // EXTRACTOR DEL ID DE VIDEO DE YOUTUBE
     function extraerIdYouTube(url) {
       if (!url) return null;
       const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/i);
@@ -1039,7 +1147,7 @@
       }
     }
 
-    // ================= 2. LOGO =================
+    // ================= 2. LOGO & BANNER =================
     async function cargarLogoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_LOGO_URL);
@@ -1071,7 +1179,38 @@
       }
     }
 
-    // ================= 3. NOTICIAS & SPA ROUTER =================
+    async function cargarBannerDesdeSheet() {
+      try {
+        const response = await fetch(GVIZ_BANNER_URL);
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        if (data.table && data.table.rows && data.table.rows.length > 0) {
+          let bannerFinal = '';
+          for (const row of data.table.rows) {
+            if (!row.c) continue;
+            for (const cell of row.c) {
+              const val = (cell?.v ?? '').toString().trim();
+              if (val.includes('http') || val.includes('drive.google.com')) {
+                bannerFinal = procesarUrlImagen(val);
+                break;
+              }
+            }
+            if (bannerFinal) break;
+          }
+
+          if (bannerFinal) {
+            document.getElementById('brandBannerContainer').innerHTML = 
+              `<img src="${bannerFinal}" alt="Banner Barinas TV" class="brand-banner-img" referrerpolicy="no-referrer">`;
+          }
+        }
+      } catch (e) {
+        console.warn("Banner remoto no disponible:", e);
+      }
+    }
+
+    // ================= 3. NOTICIAS INFORMATIVO BTV (SPA) =================
     async function cargarInformativoDesdeSheet() {
       try {
         const response = await fetch(GVIZ_NOTICIAS_URL);
@@ -1141,7 +1280,7 @@
       }
 
       container.innerHTML = items.map(item => `
-        <article class="news-card" onclick="abrirNoticia(${item.id})">
+        <article class="news-card clickable" onclick="abrirNoticia(${item.id})">
           <div class="news-header">
             <span class="news-tag">${item.tipo}</span>
             <h3 class="news-title">${item.titulo}</h3>
@@ -1186,7 +1325,7 @@
       
       if (recientes.length > 0) {
         containerRecientes.innerHTML = recientes.map(r => `
-          <div class="recent-item" onclick="abrirNoticia(${r.id})">
+          <div class="recent-item clickable" onclick="abrirNoticia(${r.id})">
             <img src="${r.imagen}" class="recent-thumb" alt="${r.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}'">
             <div class="recent-info">
               <span class="recent-tag">${r.tipo}</span>
@@ -1206,7 +1345,7 @@
 
       if (relacionadas.length > 0) {
         gridRelacionadas.innerHTML = relacionadas.map(item => `
-          <article class="news-card" onclick="abrirNoticia(${item.id})">
+          <article class="news-card clickable" onclick="abrirNoticia(${item.id})">
             <div class="news-header">
               <span class="news-tag">${item.tipo}</span>
               <h3 class="news-title">${item.titulo}</h3>
@@ -1250,7 +1389,132 @@
       }
     }
 
-    // ================= 4. PROGRAMAS (EXTRACCIÓN AUTOMÁTICA DE MINIATURA DE YOUTUBE) =================
+    // ================= 4. NOTICIAS VARYNA DESDE EXCEL CON VISOR PDF =================
+    async function cargarNoticiasVarynaDesdeSheet() {
+      try {
+        const response = await fetch(GVIZ_VARYNA_URL);
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        if (!data.table || !data.table.rows || data.table.rows.length === 0) {
+          document.getElementById('gridNoticiasVaryna').innerHTML = 
+            `<div style="color:var(--text-muted); font-size:14px;">No hay ediciones registradas en Noticias Varyna.</div>`;
+          return;
+        }
+
+        const rows = data.table.rows;
+        let colTitulo = 0, colDesc = 1, colImagen = 2, colPDF = 3;
+        let startIndex = 0;
+
+        // Inspección de encabezados
+        if (rows.length > 0 && rows[0].c) {
+          rows[0].c.forEach((cell, idx) => {
+            const val = String(cell?.v || '').toLowerCase();
+            if (val.includes('titulo') || val.includes('nombre')) colTitulo = idx;
+            else if (val.includes('desc') || val.includes('resumen') || val.includes('nota')) colDesc = idx;
+            else if (val.includes('img') || val.includes('foto') || val.includes('portada')) colImagen = idx;
+            else if (val.includes('pdf') || val.includes('enlace') || val.includes('archivo')) colPDF = idx;
+          });
+          const v0 = String(rows[0].c[0]?.v || '').toLowerCase();
+          if (v0.includes('titulo') || v0.includes('edicion') || v0.includes('noticia')) {
+            startIndex = 1;
+          }
+        }
+
+        const listaVaryna = [];
+        for (let i = startIndex; i < rows.length; i++) {
+          const cells = rows[i].c;
+          if (!cells) continue;
+
+          const titulo = String(cells[colTitulo]?.v ?? '').trim();
+          const desc = String(cells[colDesc]?.v ?? '').trim();
+          const imagenRaw = String(cells[colImagen]?.v ?? '').trim();
+          const pdfRaw = String(cells[colPDF]?.v ?? '').trim();
+
+          if (titulo || desc || pdfRaw) {
+            listaVaryna.push({
+              titulo: titulo || 'Edición Digital Varyna',
+              desc: desc || '',
+              imagen: procesarUrlImagen(imagenRaw) || imgPlaceholder,
+              pdf: pdfRaw
+            });
+          }
+        }
+
+        renderizarNoticiasVaryna(listaVaryna);
+      } catch (e) {
+        console.warn("Error cargando Noticias Varyna:", e);
+        document.getElementById('gridNoticiasVaryna').innerHTML = 
+          `<div style="color:var(--text-muted); font-size:14px;">Error al conectar con la hoja de Noticias Varyna.</div>`;
+      }
+    }
+
+    function renderizarNoticiasVaryna(items) {
+      const container = document.getElementById('gridNoticiasVaryna');
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay ediciones disponibles.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const tienePDF = Boolean(item.pdf && item.pdf.startsWith('http'));
+        return `
+          <article class="news-card clickable" onclick="${tienePDF ? `abrirVisorPDF('${item.pdf.replace(/'/g, "\\'")}', '${item.titulo.replace(/'/g, "\\'")}')` : ''}">
+            <div class="news-header">
+              <span class="news-tag pdf-badge">Edición Digital PDF</span>
+              <h3 class="news-title">${item.titulo}</h3>
+            </div>
+            
+            <div class="news-body-container">
+              <img src="${item.imagen}" class="news-bg-blur" alt="Fondo" aria-hidden="true">
+              <img src="${item.imagen}" class="news-bg-img" alt="${item.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}';">
+              <div class="news-body-overlay">
+                <p class="news-body-text">${item.desc}</p>
+                ${tienePDF ? `
+                  <button class="btn-pdf-action">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Leer Edición PDF
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // ================= FUNCIONES DEL VISOR DE PDF EN LÍNEA =================
+    function abrirVisorPDF(urlRaw, titulo) {
+      if (!urlRaw) return;
+      let url = urlRaw.trim();
+
+      // Conversión de Google Drive para visor embebido
+      const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+      if (driveMatch && driveMatch[1]) {
+        url = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+      } else if (!url.includes('docs.google.com/viewer') && !url.includes('drive.google.com')) {
+        url = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      }
+
+      document.getElementById('pdfModalTitulo').textContent = titulo || 'Edición Digital - Noticias Varyna';
+      document.getElementById('pdfModalExterno').href = urlRaw;
+      document.getElementById('pdfIframe').src = url;
+      document.getElementById('modalVisorPDF').classList.add('active');
+    }
+
+    function cerrarVisorPDF() {
+      document.getElementById('modalVisorPDF').classList.remove('active');
+      document.getElementById('pdfIframe').src = '';
+    }
+
+    function cerrarVisorPDFSiFondo(e) {
+      if (e.target.id === 'modalVisorPDF') {
+        cerrarVisorPDF();
+      }
+    }
+
+    // ================= 5. PROGRAMAS (CON MINIATURA DE YOUTUBE) =================
     async function cargarProgramasDesdeSheet() {
       try {
         const response = await fetch(GVIZ_PROGRAMAS_URL);
@@ -1318,14 +1582,11 @@
         const enlace = item.enlace;
         const tieneEnlace = Boolean(enlace && enlace.startsWith('http'));
         
-        // 1. Extraer ID y miniatura de YouTube si es un video
         const ytId = extraerIdYouTube(enlace);
         const esYouTube = Boolean(ytId);
 
-        // 2. Definir URL de la miniatura (YouTube o enlace directo de imagen)
         let miniaturaUrl = '';
         if (esYouTube) {
-          // Miniatura oficial HQ de YouTube
           miniaturaUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
         } else if (tieneEnlace && /\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/i.test(enlace)) {
           miniaturaUrl = procesarUrlImagen(enlace);
@@ -1343,7 +1604,6 @@
               <h3 class="news-title">${item.nombre}</h3>
             </div>
 
-            <!-- Miniatura de YouTube o Imagen -->
             ${miniaturaUrl ? `
               <div class="program-thumbnail-wrapper">
                 <img src="${miniaturaUrl}" 
@@ -1354,15 +1614,12 @@
                 
                 ${esYouTube ? `
                   <div class="yt-play-badge">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
                   </div>
                 ` : ''}
               </div>
             ` : ''}
 
-            <!-- Pie de tarjeta con botón interactivo -->
             <div class="program-footer">
               ${esYouTube ? `
                 <div class="program-link-btn yt-btn">
@@ -1374,11 +1631,7 @@
               ` : tieneEnlace && !miniaturaUrl ? `
                 <div class="program-link-btn">
                   <span>Ver Programa</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </div>
               ` : `
                 <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Emisión oficial BTV</div>
@@ -1390,7 +1643,7 @@
       }).join('');
     }
 
-    // ================= 5. HORARIOS: PARRILLA DE PROGRAMACIÓN =================
+    // ================= 6. HORARIOS DE EMISIÓN =================
     function normalizarTexto(txt) {
       return String(txt || '')
         .toLowerCase()
@@ -1605,10 +1858,12 @@
       `).join('');
     }
 
-    // Inicializar cargas de las 5 hojas de Google Sheets
+    // Inicializar cargas de todas las hojas de Google Sheets
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
+    cargarBannerDesdeSheet();
     cargarInformativoDesdeSheet();
+    cargarNoticiasVarynaDesdeSheet();
     cargarProgramasDesdeSheet();
     cargarHorariosDesdeSheet();
 
