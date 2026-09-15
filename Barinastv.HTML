@@ -298,7 +298,7 @@
       transition: color 0.2s ease;
     }
 
-    /* ================= CARDS DE LA SECCIÓN PROGRAMAS (GOOGLE SHEETS) ================= */
+    /* ================= CARDS DE LA SECCIÓN PROGRAMAS ================= */
     .program-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -307,7 +307,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 170px;
+      min-height: 180px;
       transition: all 0.25s ease;
     }
     .program-card.clickable {
@@ -316,7 +316,7 @@
     .program-card.clickable:hover {
       transform: translateY(-4px);
       border-color: rgba(220, 38, 38, 0.5);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(220, 38, 38, 0.15);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(220, 38, 38, 0.18);
     }
     .program-time-pill {
       font-size: 12px;
@@ -328,6 +328,51 @@
       border-radius: 99px;
       letter-spacing: 0.5px;
     }
+
+    /* Miniatura de video de YouTube */
+    .program-thumbnail-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 12px 0 6px;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .program-thumbnail-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+    .program-card:hover .program-thumbnail-wrapper img {
+      transform: scale(1.06);
+    }
+    
+    /* Botón play sobre la miniatura */
+    .yt-play-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      background: rgba(220, 38, 38, 0.92);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), 0 0 15px rgba(220, 38, 38, 0.6);
+      transition: transform 0.25s ease, background 0.25s ease;
+      pointer-events: none;
+    }
+    .program-card:hover .yt-play-badge {
+      transform: translate(-50%, -50%) scale(1.15);
+      background: #ff0000;
+    }
+
     .program-footer {
       margin-top: 14px;
       padding-top: 12px;
@@ -339,13 +384,20 @@
     .program-link-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       color: var(--red);
       font-size: 13px;
       font-weight: 700;
       transition: transform 0.2s ease, color 0.2s ease;
     }
-    .program-card:hover .program-link-btn {
+    .program-link-btn.yt-btn {
+      color: #f87171;
+    }
+    .program-card:hover .program-link-btn.yt-btn {
+      color: #ff4d4d;
+      transform: translateX(4px);
+    }
+    .program-card:hover .program-link-btn:not(.yt-btn) {
       color: #fff;
       transform: translateX(4px);
     }
@@ -780,7 +832,7 @@
         <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
       </div>
 
-      <!-- SECCIÓN PROGRAMAS (CONECTADA A GOOGLE SHEETS: Día / Nombre / Hora / Enlace) -->
+      <!-- SECCIÓN PROGRAMAS (CONECTADA A GOOGLE SHEETS: Día / Nombre / Hora / Enlace a YouTube) -->
       <section id="programas">
         <div class="section-header">
           <h2 class="section-title">Nuestra Programación</h2>
@@ -874,7 +926,7 @@
 
   <!-- SCRIPTS -->
   <script>
-    // 5 HOJAS DE GOOGLE SHEETS VINCULADAS
+    // HOJAS DE GOOGLE SHEETS
     const NOTICIAS_SHEET_ID  = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
     const LOGO_SHEET_ID      = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
     const REDES_SHEET_ID     = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
@@ -916,6 +968,13 @@
       }
 
       return url;
+    }
+
+    // EXTRACTOR DEL ID DE VIDEO DE YOUTUBE
+    function extraerIdYouTube(url) {
+      if (!url) return null;
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|live\/|shorts\/))([\w-]{11})/i);
+      return match ? match[1] : null;
     }
 
     // ================= 1. REDES SOCIALES =================
@@ -1191,7 +1250,7 @@
       }
     }
 
-    // ================= 4. SECCIÓN PROGRAMAS (ORDEN: Día / Nombre / Hora / Enlace) =================
+    // ================= 4. PROGRAMAS (EXTRACCIÓN AUTOMÁTICA DE MINIATURA DE YOUTUBE) =================
     async function cargarProgramasDesdeSheet() {
       try {
         const response = await fetch(GVIZ_PROGRAMAS_URL);
@@ -1209,7 +1268,6 @@
         let colDia = 0, colNombre = 1, colHora = 2, colEnlace = 3;
         let startIndex = 0;
 
-        // Comprueba si la primera fila son encabezados
         if (rows.length > 0 && rows[0].c) {
           const v0 = String(rows[0].c[0]?.v || '').toLowerCase();
           const v1 = String(rows[0].c[1]?.v || '').toLowerCase();
@@ -1257,12 +1315,26 @@
       }
 
       container.innerHTML = items.map(item => {
-        const tieneEnlace = Boolean(item.enlace && item.enlace.startsWith('http'));
-        const esImagen = tieneEnlace && /\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/i.test(item.enlace);
+        const enlace = item.enlace;
+        const tieneEnlace = Boolean(enlace && enlace.startsWith('http'));
+        
+        // 1. Extraer ID y miniatura de YouTube si es un video
+        const ytId = extraerIdYouTube(enlace);
+        const esYouTube = Boolean(ytId);
+
+        // 2. Definir URL de la miniatura (YouTube o enlace directo de imagen)
+        let miniaturaUrl = '';
+        if (esYouTube) {
+          // Miniatura oficial HQ de YouTube
+          miniaturaUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        } else if (tieneEnlace && /\.(jpeg|jpg|gif|png|webp|avif|svg)($|\?)/i.test(enlace)) {
+          miniaturaUrl = procesarUrlImagen(enlace);
+        }
 
         return `
           <article class="program-card ${tieneEnlace ? 'clickable' : ''}" 
-                   ${tieneEnlace ? `onclick="window.open('${item.enlace}', '_blank')"` : ''}>
+                   ${tieneEnlace ? `onclick="window.open('${enlace}', '_blank')"` : ''}>
+            
             <div class="news-header">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
                 <span class="news-tag">${item.dia}</span>
@@ -1271,14 +1343,35 @@
               <h3 class="news-title">${item.nombre}</h3>
             </div>
 
-            ${esImagen ? `
-              <div style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; margin-top: 10px; background: #000;">
-                <img src="${item.enlace}" alt="${item.nombre}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy" referrerpolicy="no-referrer">
+            <!-- Miniatura de YouTube o Imagen -->
+            ${miniaturaUrl ? `
+              <div class="program-thumbnail-wrapper">
+                <img src="${miniaturaUrl}" 
+                     alt="${item.nombre}" 
+                     loading="lazy" 
+                     referrerpolicy="no-referrer" 
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=600&q=80';">
+                
+                ${esYouTube ? `
+                  <div class="yt-play-badge">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                ` : ''}
               </div>
             ` : ''}
 
+            <!-- Pie de tarjeta con botón interactivo -->
             <div class="program-footer">
-              ${tieneEnlace && !esImagen ? `
+              ${esYouTube ? `
+                <div class="program-link-btn yt-btn">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <span>Ver en YouTube</span>
+                </div>
+              ` : tieneEnlace && !miniaturaUrl ? `
                 <div class="program-link-btn">
                   <span>Ver Programa</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1291,6 +1384,7 @@
                 <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Emisión oficial BTV</div>
               `}
             </div>
+
           </article>
         `;
       }).join('');
@@ -1332,7 +1426,7 @@
 
         const rows = data.table.rows;
 
-        let filaEncabezados = 4; // Fila 5 de Excel (0-based)
+        let filaEncabezados = 4;
         for (let r = 0; r < Math.min(rows.length, 10); r++) {
           const texto = (rows[r].c || []).map(c => normalizarTexto(c?.v)).join(' ');
           if (texto.includes('lunes') && texto.includes('martes')) {
