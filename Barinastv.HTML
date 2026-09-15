@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Noticias</title>
+  <title>BARINAS TV | Señal Oficial & Informativo BTV</title>
 
   <!-- Motor HLS.js optimizado -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
@@ -16,7 +16,6 @@
   <style>
     :root {
       --red: #dc2626;
-      --red-hover: #b91c1c;
       --bg: #090a0f;
       --surface: #12151e;
       --border: rgba(255, 255, 255, 0.08);
@@ -36,7 +35,7 @@
 
     a { color: inherit; text-decoration: none; }
 
-    /* ================= BARRA SUPERIOR Y REDES ================= */
+    /* ================= BARRA SUPERIOR & REDES ================= */
     .top-bar {
       background: #050608;
       border-bottom: 1px solid var(--border);
@@ -108,7 +107,7 @@
     }
     .nav-links a:hover { color: #fff; }
 
-    /* ================= CONTENEDOR GENERAL ================= */
+    /* ================= CONTENEDOR ================= */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -127,7 +126,7 @@
       padding-left: 12px;
     }
 
-    /* ESPACIO PUBLICITARIO */
+    /* PUBLICIDAD */
     .ad-banner {
       width: 100%;
       background: #11141d;
@@ -140,7 +139,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 90px;
+      min-height: 85px;
     }
     .ad-tag {
       font-size: 10px;
@@ -155,7 +154,7 @@
       color: #cbd5e1;
     }
 
-    /* ================= TARJETAS: TÍTULO / NOTA / IMAGEN ================= */
+    /* ================= GRID & TARJETAS (ORDEN: TIPO / TÍTULO / NOTA / IMAGEN) ================= */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -177,7 +176,7 @@
       border-color: rgba(220, 38, 38, 0.4);
     }
 
-    /* 1. TÍTULO Y CATEGORÍA */
+    /* 1. Tipo de Noticia */
     .news-header {
       margin-bottom: 12px;
     }
@@ -189,9 +188,11 @@
       padding: 3px 8px;
       border-radius: 4px;
       margin-bottom: 8px;
+      background: rgba(220, 38, 38, 0.15);
+      color: #fca5a5;
     }
-    .tag-red { background: rgba(220, 38, 38, 0.15); color: #fca5a5; }
-    .tag-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+
+    /* 2. Titulo de la Noticia */
     .news-title {
       font-size: 18px;
       font-weight: 800;
@@ -199,7 +200,7 @@
       color: #ffffff;
     }
 
-    /* 2. NOTA / CONTENIDO */
+    /* 3. Noticia */
     .news-body {
       font-size: 14px;
       color: var(--text-muted);
@@ -208,7 +209,7 @@
       flex-grow: 1;
     }
 
-    /* 3. IMAGEN (AL FINAL) */
+    /* 4. Imagen */
     .news-image-wrapper {
       width: 100%;
       height: 190px;
@@ -227,7 +228,7 @@
       transform: scale(1.04);
     }
 
-    /* SECCIÓN HORARIOS */
+    /* HORARIOS */
     .schedule-list {
       display: flex;
       flex-direction: column;
@@ -306,7 +307,6 @@
       object-fit: contain;
     }
 
-    /* Carátula clic para reproducir en miniatura */
     .click-to-play-overlay {
       position: absolute;
       inset: 0;
@@ -360,10 +360,10 @@
 </head>
 <body>
 
-  <!-- 1. REDES SOCIALES EN LA PARTE SUPERIOR (CONFIGURABLES VÍA EXCEL) -->
+  <!-- REDES SOCIALES EN LA PARTE SUPERIOR -->
   <div class="top-bar">
     <div class="top-bar-left">
-      <span>Barinas, Venezuela &bull; Señal Digital</span>
+      <span>Barinas, Venezuela &bull; Señal Oficial</span>
     </div>
     <div class="social-links" id="socialLinksContainer">
       <a href="#" id="link-facebook" class="social-btn" target="_blank">Facebook</a>
@@ -374,7 +374,7 @@
     </div>
   </div>
 
-  <!-- 2. HEADER -->
+  <!-- HEADER -->
   <header>
     <div class="brand-container">
       <span class="brand-badge">BTV</span>
@@ -382,7 +382,7 @@
     </div>
     <nav>
       <ul class="nav-links">
-        <li><a href="#informativo">Informativo</a></li>
+        <li><a href="#informativo-btv">Informativo BTV</a></li>
         <li><a href="#noticias-varyna">Noticias Varyna</a></li>
         <li><a href="#programas">Programas</a></li>
         <li><a href="#horarios">Horarios</a></li>
@@ -392,61 +392,90 @@
 
   <main class="container">
 
-    <!-- ESPACIO PUBLICITARIO 1 -->
+    <!-- PUBLICIDAD 1 -->
     <div class="ad-banner">
       <span class="ad-tag">Espacio Publicitario</span>
-      <div class="ad-content">Tu Empresa o Marca Aquí — Anúnciate en Barinas TV</div>
+      <div class="ad-content">Anúnciate aquí con Barinas TV &bull; Cobertura en todo el Estado</div>
     </div>
 
-    <!-- SECCIÓN 1: INFORMATIVO (ORDEN: TÍTULO / NOTA / IMAGEN) -->
-    <section id="informativo">
+    <!-- SECCIÓN INFORMATIVO BTV CONECTADA A GOOGLE SHEETS -->
+    <section id="informativo-btv">
       <div class="section-header">
-        <h2 class="section-title">Informativo Barinas</h2>
+        <h2 class="section-title">Informativo BTV</h2>
       </div>
-      <div class="grid" id="gridInformativo">
-        <!-- Renderizado dinámico -->
+      <div class="grid" id="gridInformativoBTV">
+        <div style="color:var(--text-muted); font-size:14px;">Cargando informativo desde la hoja de cálculo...</div>
       </div>
     </section>
 
-    <!-- SECCIÓN 2: NOTICIAS VARYNA (ORDEN: TÍTULO / NOTA / IMAGEN) -->
+    <!-- NOTICIAS VARYNA -->
     <section id="noticias-varyna">
       <div class="section-header">
         <h2 class="section-title">Noticias Varyna</h2>
       </div>
       <div class="grid" id="gridNoticiasVaryna">
-        <!-- Renderizado dinámico -->
+        <article class="news-card">
+          <div class="news-header">
+            <span class="news-tag" style="background:rgba(59,130,246,0.15); color:#93c5fd;">Economía</span>
+            <h3 class="news-title">Aumento en la producción láctea y quesera de Varyna</h3>
+          </div>
+          <p class="news-body">Nuevos planes de financiamiento permiten elevar los inventarios para la distribución regional.</p>
+          <div class="news-image-wrapper">
+            <img src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80" loading="lazy">
+          </div>
+        </article>
       </div>
     </section>
 
-    <!-- ESPACIO PUBLICITARIO 2 -->
+    <!-- PUBLICIDAD 2 -->
     <div class="ad-banner">
       <span class="ad-tag">Publicidad</span>
-      <div class="ad-content">Llega a miles de hogares en todo el estado Barinas</div>
+      <div class="ad-content">Impulsa tu negocio con nuestra señal streaming HD</div>
     </div>
 
-    <!-- SECCIÓN 3: PROGRAMAS -->
+    <!-- PROGRAMAS -->
     <section id="programas">
       <div class="section-header">
         <h2 class="section-title">Nuestra Programación</h2>
       </div>
       <div class="grid" id="gridProgramas">
-        <!-- Renderizado dinámico -->
+        <article class="news-card">
+          <div class="news-header">
+            <span class="news-tag">Matutino</span>
+            <h3 class="news-title">El Mañanero Llanero</h3>
+          </div>
+          <p class="news-body">Entrevistas de actualidad, café y la mejor música de los llanos.</p>
+          <div class="news-image-wrapper">
+            <img src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80" loading="lazy">
+          </div>
+        </article>
       </div>
     </section>
 
-    <!-- SECCIÓN 4: HORARIOS -->
+    <!-- HORARIOS -->
     <section id="horarios">
       <div class="section-header">
         <h2 class="section-title">Horarios de Emisión</h2>
       </div>
       <div class="schedule-list" id="listHorarios">
-        <!-- Renderizado dinámico -->
+        <div class="schedule-item">
+          <span class="schedule-time">07:00 AM</span>
+          <div class="schedule-info"><strong>El Mañanero Llanero</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
+        </div>
+        <div class="schedule-item">
+          <span class="schedule-time">12:00 PM</span>
+          <div class="schedule-info"><strong>Informativo BTV - Meridiano</strong><br><small style="color:var(--text-muted)">Lunes a Sábado</small></div>
+        </div>
+        <div class="schedule-item">
+          <span class="schedule-time">07:00 PM</span>
+          <div class="schedule-info"><strong>Informativo BTV - Emisión Estelar</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= -->
+  <!-- REPRODUCTOR EN LA ESQUINA INFERIOR DERECHA (PIP) -->
   <div class="floating-player-box">
     <div class="player-header">
       <div class="live-tag">
@@ -457,7 +486,6 @@
     </div>
 
     <div class="video-viewport" onclick="reproducirEnEsquina()">
-      <!-- Clic aquí inicia el video en la esquina sin pantalla completa -->
       <div class="click-to-play-overlay" id="clickPlayOverlay">
         <div class="btn-play-trigger">
           <div class="play-arrow"></div>
@@ -469,164 +497,121 @@
     </div>
   </div>
 
-  <!-- ================= LÓGICA DE DATOS (EXCEL READY) Y REPRODUCTOR ================= -->
+  <!-- ================= SCRIPT CONEXIÓN SHEETS Y REPRODUCTOR ================= -->
   <script>
-    /* =========================================================================
-       CONFIGURACIÓN DE EXCEL:
-       Para conectar con Google Sheets/Excel:
-       1. Publica tu hoja como CSV (Archivo > Compartir > Publicar en la web > CSV).
-       2. Pega el enlace aquí abajo en SHEET_CSV_URL.
-       ========================================================================= */
-    const SHEET_CSV_URL = "";
+    // 1. TU ENLACE PROPORCIONADO DIRECTAMENTE
+    const SHEET_ORIGINAL_URL = "https://docs.google.com/spreadsheets/d/1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI/edit?usp=sharing";
 
-    // DATOS DE RESPALDO CON EL ORDEN: Título / Nota / Imagen
-    const backupData = {
-      redes: {
-        facebook: "https://facebook.com",
-        instagram: "https://instagram.com",
-        x: "https://x.com",
-        youtube: "https://youtube.com",
-        whatsapp: "https://whatsapp.com"
-      },
-      informativo: [
-        {
-          titulo: "Rehabilitación de vías agrícolas en el municipio Pedraza",
-          nota: "Maquinaria pesada se despliega en sectores productivos para garantizar el traslado seguro de cosechas hacia los centros de acopio.",
-          imagen: "https://images.unsplash.com/photo-1584467735815-f778f274e296?w=600&q=80",
-          tag: "Vialidad"
-        },
-        {
-          titulo: "Despliegue de jornada médica comunitaria en Ciudad Tavacare",
-          nota: "Atención pediátrica, entrega gratuita de medicinas y vacunación integral beneficiaron a más de 500 familias barinesas.",
-          imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80",
-          tag: "Salud"
-        },
-        {
-          titulo: "Monitoreo preventivo del caudal de los ríos tras lluvias",
-          nota: "Protección Civil se mantiene alerta en los ejes llaneros ante el aumento estacionario en los niveles de agua.",
-          imagen: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80",
-          tag: "Prevención"
-        }
-      ],
-      noticiasVaryna: [
-        {
-          titulo: "Productores de Varyna incrementan producción de queso llanero",
-          nota: "Nuevos esquemas de financiamiento fortalecen la cadena de lácteos y el suministro en los mercados locales.",
-          imagen: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80",
-          tag: "Economía"
-        },
-        {
-          titulo: "Festival de joropo y arpa en honor a nuestras raíces llaneras",
-          nota: "Músicos y bailadores de toda la región se dieron cita en un encuentro lleno de color, tradición y folclore venezolano.",
-          imagen: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80",
-          tag: "Cultura"
-        }
-      ],
-      programas: [
-        {
-          nombre: "El Mañanero Llanero",
-          desc: "Café, entrevistas, análisis de la actualidad y la mejor música de nuestros llanos para iniciar tu jornada.",
-          imagen: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=80",
-          tag: "Matutino"
-        },
-        {
-          nombre: "Noticias Barinas TV",
-          desc: "Reportajes en profundidad, móviles en vivo y el balance informativo veraz de todo el acontecer regional.",
-          imagen: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=600&q=80",
-          tag: "Noticiero"
-        }
-      ],
-      horarios: [
-        { hora: "07:00 AM - 09:00 AM", programa: "El Mañanero Llanero", dias: "Lunes a Viernes" },
-        { hora: "12:00 PM - 01:00 PM", programa: "Noticias Barinas TV - Emisión Meridiana", dias: "Lunes a Sábado" },
-        { hora: "07:00 PM - 08:30 PM", programa: "Noticias Barinas TV - Emisión Estelar", dias: "Lunes a Viernes" },
-        { hora: "09:00 PM - 10:30 PM", programa: "Pasión Deportiva Llanera", dias: "Martes y Jueves" }
-      ]
-    };
-
-    // RENDERIZADO CON LA ESTRUCTURA: TÍTULO -> NOTA -> IMAGEN
-    function renderizarPagina(data) {
-      // 1. Redes Sociales
-      if (data.redes) {
-        if (data.redes.facebook) document.getElementById('link-facebook').href = data.redes.facebook;
-        if (data.redes.instagram) document.getElementById('link-instagram').href = data.redes.instagram;
-        if (data.redes.x) document.getElementById('link-x').href = data.redes.x;
-        if (data.redes.youtube) document.getElementById('link-youtube').href = data.redes.youtube;
-        if (data.redes.whatsapp) document.getElementById('link-whatsapp').href = data.redes.whatsapp;
+    // Transforma el enlace de visualización a la API CSV abierta con CORS de Google
+    function obtenerUrlCSV(url) {
+      const idMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (idMatch && idMatch[1]) {
+        return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/gviz/tq?tqx=out:csv`;
       }
-
-      // 2. Informativo (Título -> Nota -> Imagen)
-      document.getElementById('gridInformativo').innerHTML = data.informativo.map(item => `
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag tag-red">${item.tag || 'Informativo'}</span>
-            <h3 class="news-title">${item.titulo}</h3>
-          </div>
-          <p class="news-body">${item.nota}</p>
-          <div class="news-image-wrapper">
-            <img src="${item.imagen}" alt="${item.titulo}" loading="lazy">
-          </div>
-        </article>
-      `).join('');
-
-      // 3. Noticias Varyna (Título -> Nota -> Imagen)
-      document.getElementById('gridNoticiasVaryna').innerHTML = data.noticiasVaryna.map(item => `
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag tag-blue">${item.tag || 'Varyna'}</span>
-            <h3 class="news-title">${item.titulo}</h3>
-          </div>
-          <p class="news-body">${item.nota}</p>
-          <div class="news-image-wrapper">
-            <img src="${item.imagen}" alt="${item.titulo}" loading="lazy">
-          </div>
-        </article>
-      `).join('');
-
-      // 4. Programas (Título -> Descripción -> Imagen)
-      document.getElementById('gridProgramas').innerHTML = data.programas.map(prog => `
-        <article class="news-card">
-          <div class="news-header">
-            <span class="news-tag tag-red">${prog.tag || 'Programa'}</span>
-            <h3 class="news-title">${prog.nombre}</h3>
-          </div>
-          <p class="news-body">${prog.desc}</p>
-          <div class="news-image-wrapper">
-            <img src="${prog.imagen}" alt="${prog.nombre}" loading="lazy">
-          </div>
-        </article>
-      `).join('');
-
-      // 5. Horarios
-      document.getElementById('listHorarios').innerHTML = data.horarios.map(h => `
-        <div class="schedule-item">
-          <span class="schedule-time">${h.hora}</span>
-          <div class="schedule-info">
-            <div style="font-weight:700;">${h.programa}</div>
-            <small style="color:var(--text-muted);">${h.dias}</small>
-          </div>
-        </div>
-      `).join('');
+      return url;
     }
 
-    // CARGA DE DATOS (CSV o LOCAL)
-    async function cargarDatos() {
-      if (!SHEET_CSV_URL) {
-        renderizarPagina(backupData);
+    const CSV_URL = obtenerUrlCSV(SHEET_ORIGINAL_URL);
+
+    // DATOS DE RESPALDO (Por si hay cortes de red o la hoja está vacía)
+    const backupInformativo = [
+      {
+        tipo: "Regional",
+        titulo: "Rehabilitación de vías agrícolas en el municipio Pedraza",
+        noticia: "Maquinaria pesada se despliega en sectores productivos para garantizar el traslado seguro de cosechas hacia los centros de acopio.",
+        imagen: "https://images.unsplash.com/photo-1584467735815-f778f274e296?w=600&q=80"
+      },
+      {
+        tipo: "Salud",
+        titulo: "Despliegue de jornada médica comunitaria en Ciudad Tavacare",
+        noticia: "Atención pediátrica, entrega gratuita de medicinas y vacunación integral beneficiaron a más de 500 familias barinesas.",
+        imagen: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&q=80"
+      }
+    ];
+
+    // PARSER CSV QUE RESPETA COMAS DENTRO DE TEXTOS
+    function parseCSV(text) {
+      const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+      if (lines.length <= 1) return [];
+
+      const result = [];
+      // Inicia en fila 1 para saltar la fila de encabezados
+      for (let i = 1; i < lines.length; i++) {
+        const row = [];
+        let inQuotes = false;
+        let currentValue = '';
+
+        for (let char of lines[i]) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            row.push(currentValue.trim());
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        row.push(currentValue.trim());
+
+        // Mapeo al orden: Tipo de Noticia (0) / Titulo de la Noticia (1) / Noticia (2) / Imagen (3)
+        if (row.length >= 3) {
+          result.push({
+            tipo: (row[0] || 'Informativo').replace(/^"|"$/g, ''),
+            titulo: (row[1] || 'Sin título').replace(/^"|"$/g, ''),
+            noticia: (row[2] || '').replace(/^"|"$/g, ''),
+            imagen: (row[3] || '').replace(/^"|"$/g, '')
+          });
+        }
+      }
+      return result;
+    }
+
+    // RENDERIZADOR: TIPO DE NOTICIA -> TITULO -> NOTICIA -> IMAGEN
+    function renderizarInformativoBTV(items) {
+      const container = document.getElementById('gridInformativoBTV');
+      if (!items || items.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay noticias disponibles en la hoja de cálculo.</div>`;
         return;
       }
+
+      container.innerHTML = items.map(item => `
+        <article class="news-card">
+          <!-- 1. Tipo de Noticia & 2. Titulo de la Noticia -->
+          <div class="news-header">
+            <span class="news-tag">${item.tipo || 'Informativo'}</span>
+            <h3 class="news-title">${item.titulo}</h3>
+          </div>
+          <!-- 3. Noticia -->
+          <p class="news-body">${item.noticia}</p>
+          <!-- 4. Imagen -->
+          <div class="news-image-wrapper">
+            <img src="${item.imagen || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&q=80'}" alt="${item.titulo}" loading="lazy">
+          </div>
+        </article>
+      `).join('');
+    }
+
+    // PETICIÓN A GOOGLE SHEETS
+    async function cargarInformativoDesdeSheet() {
       try {
-        const res = await fetch(SHEET_CSV_URL);
-        const text = await res.text();
-        renderizarPagina(backupData);
-      } catch (e) {
-        renderizarPagina(backupData);
+        const response = await fetch(CSV_URL);
+        const text = await response.text();
+        const data = parseCSV(text);
+        if (data && data.length > 0) {
+          renderizarInformativoBTV(data);
+        } else {
+          renderizarInformativoBTV(backupInformativo);
+        }
+      } catch (error) {
+        console.warn("Aviso: usando datos locales de respaldo:", error);
+        renderizarInformativoBTV(backupInformativo);
       }
     }
-    cargarDatos();
+
+    cargarInformativoDesdeSheet();
 
     /* =========================================================================
-       REPRODUCTOR HLS ESQUINA DERECHA (INICIA CON UN CLIC SIN SALIR DE LA PÁGINA)
+       REPRODUCTOR EN ESQUINA INFERIOR DERECHA (INICIA SIN PANTALLA COMPLETA)
        ========================================================================= */
     const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
     const video = document.getElementById('videoPlayer');
