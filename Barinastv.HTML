@@ -180,7 +180,7 @@
       color: #cbd5e1;
     }
 
-    /* ================= GRILLA PRINCIPAL DE NOTICIAS ================= */
+    /* ================= GRILLA DE NOTICIAS ================= */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -299,11 +299,9 @@
       transition: color 0.2s ease;
     }
 
-    /* =========================================================================
-       SUB-WEB / VISTA DE NOTICIA INDIVIDUAL (DETALLE + SIDEBAR + RELACIONADAS)
-       ========================================================================= */
+    /* ================= SUB-WEB DE NOTICIA ================= */
     #vista-noticia {
-      display: none; /* Oculta por defecto */
+      display: none;
       animation: fadeIn 0.3s ease;
     }
     @keyframes fadeIn {
@@ -332,24 +330,19 @@
       border-color: var(--red);
     }
 
-    /* Layout de 2 columnas: Artículo a la izquierda, Recientes a la derecha */
     .article-layout {
       display: grid;
       grid-template-columns: 2.2fr 1fr;
       gap: 36px;
       margin-bottom: 60px;
     }
-
-    /* Columna principal del artículo */
     .article-main {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 32px;
     }
-    .article-header {
-      margin-bottom: 24px;
-    }
+    .article-header { margin-bottom: 24px; }
     .article-title {
       font-size: clamp(24px, 3.2vw, 36px);
       font-weight: 800;
@@ -380,7 +373,6 @@
       white-space: pre-line;
     }
 
-    /* Columna derecha: Noticias Recientes */
     .article-sidebar {
       display: flex;
       flex-direction: column;
@@ -416,12 +408,8 @@
       border-bottom: none;
       padding-bottom: 0;
     }
-    .recent-item:hover {
-      transform: translateX(4px);
-    }
-    .recent-item:hover .recent-item-title {
-      color: var(--red);
-    }
+    .recent-item:hover { transform: translateX(4px); }
+    .recent-item:hover .recent-item-title { color: var(--red); }
     .recent-thumb {
       width: 80px;
       height: 60px;
@@ -454,14 +442,44 @@
       transition: color 0.2s ease;
     }
 
-    /* Sección de abajo: Otras noticias del mismo tipo */
     .related-section {
       margin-top: 40px;
       border-top: 1px solid var(--border);
       padding-top: 30px;
     }
 
-    /* HORARIOS */
+    /* ================= HORARIOS (PARRILLA INTERACTIVA CON DÍAS) ================= */
+    .schedule-days-tabs {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      scrollbar-width: thin;
+    }
+    .day-tab-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 9px 20px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .day-tab-btn:hover {
+      color: #fff;
+      border-color: rgba(220, 38, 38, 0.4);
+    }
+    .day-tab-btn.active {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+      box-shadow: 0 0 16px rgba(220, 38, 38, 0.4);
+    }
+
     .schedule-list {
       display: flex;
       flex-direction: column;
@@ -474,18 +492,43 @@
       justify-content: space-between;
       background: var(--surface);
       border: 1px solid var(--border);
-      padding: 14px 20px;
-      border-radius: 8px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      transition: border-color 0.2s ease;
+    }
+    .schedule-item:hover {
+      border-color: rgba(220, 38, 38, 0.4);
+    }
+    .schedule-time-badge {
+      min-width: 140px;
     }
     .schedule-time {
       font-weight: 800;
       font-size: 14px;
       color: var(--red);
-      min-width: 110px;
+      background: rgba(220, 38, 38, 0.1);
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      display: inline-block;
     }
-    .schedule-info { flex-grow: 1; margin-left: 15px; }
+    .schedule-info {
+      flex-grow: 1;
+      margin-left: 20px;
+    }
+    .schedule-prog-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .schedule-day-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 2px;
+      display: block;
+    }
 
-    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA (PIP) ================= */
+    /* ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
     .floating-player-box {
       position: fixed;
       bottom: 20px;
@@ -590,6 +633,8 @@
       .nav-links { display: none; }
       .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
       .grid { grid-template-columns: 1fr; }
+      .schedule-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .schedule-info { margin-left: 0; }
     }
   </style>
 </head>
@@ -622,9 +667,9 @@
     <nav>
       <ul class="nav-links">
         <li><a onclick="volverInicio()">Informativo BTV</a></li>
-        <li><a href="javascript:void(0)">Noticias Varyna</a></li>
-        <li><a href="javascript:void(0)">Programas</a></li>
-        <li><a href="javascript:void(0)">Horarios</a></li>
+        <li><a href="#noticias-varyna">Noticias Varyna</a></li>
+        <li><a href="#programas">Programas</a></li>
+        <li><a href="#horarios">Horarios</a></li>
       </ul>
     </nav>
   </header>
@@ -701,30 +746,26 @@
         </div>
       </section>
 
-      <!-- HORARIOS -->
+      <!-- SECCIÓN HORARIOS (CONECTADA A GOOGLE SHEETS) -->
       <section id="horarios">
         <div class="section-header">
           <h2 class="section-title">Horarios de Emisión</h2>
         </div>
+
+        <!-- Pestañas de Días de la Semana (Fila 5) -->
+        <div class="schedule-days-tabs" id="scheduleTabs">
+          <div style="font-size:13px; color:var(--text-muted);">Cargando días de programación...</div>
+        </div>
+
+        <!-- Lista de Programas del Día Seleccionado -->
         <div class="schedule-list" id="listHorarios">
-          <div class="schedule-item">
-            <span class="schedule-time">07:00 AM</span>
-            <div class="schedule-info"><strong>El Mañanero Llanero</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-          </div>
-          <div class="schedule-item">
-            <span class="schedule-time">12:00 PM</span>
-            <div class="schedule-info"><strong>Informativo BTV - Meridiano</strong><br><small style="color:var(--text-muted)">Lunes a Sábado</small></div>
-          </div>
-          <div class="schedule-item">
-            <span class="schedule-time">07:00 PM</span>
-            <div class="schedule-info"><strong>Informativo BTV - Emisión Estelar</strong><br><small style="color:var(--text-muted)">Lunes a Viernes</small></div>
-          </div>
+          <div style="font-size:13px; color:var(--text-muted);">Cargando parrilla horaria...</div>
         </div>
       </section>
     </div>
 
     <!-- =========================================================
-         VISTA 2: SUB-WEB DE LA NOTICIA INDIVIDUAL (SPA)
+         VISTA 2: SUB-WEB DE NOTICIA INDIVIDUAL (SPA)
          ========================================================= -->
     <div id="vista-noticia">
       <button class="btn-back" onclick="volverInicio()">
@@ -732,7 +773,6 @@
       </button>
 
       <div class="article-layout">
-        <!-- Columna Izquierda: Noticia Completa -->
         <article class="article-main">
           <div class="article-header">
             <span class="news-tag" id="detalleTag">Informativo</span>
@@ -748,31 +788,25 @@
           </div>
         </article>
 
-        <!-- Columna Derecha: Noticias Recientes -->
         <aside class="article-sidebar">
           <div class="sidebar-card">
             <h3 class="sidebar-title">Noticias Recientes</h3>
-            <div class="recent-list" id="sidebarRecientes">
-              <!-- Cargado dinámicamente -->
-            </div>
+            <div class="recent-list" id="sidebarRecientes"></div>
           </div>
         </aside>
       </div>
 
-      <!-- Parte Inferior: Otras noticias del mismo tipo -->
       <section class="related-section">
         <div class="section-header">
           <h2 class="section-title" id="tituloRelacionadas">Otras noticias del mismo tipo</h2>
         </div>
-        <div class="grid" id="gridRelacionadas">
-          <!-- Cargado dinámicamente -->
-        </div>
+        <div class="grid" id="gridRelacionadas"></div>
       </section>
     </div>
 
   </main>
 
-  <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA (NO SE INTERRUMPE) ================= -->
+  <!-- ================= REPRODUCTOR ESQUINA INFERIOR DERECHA ================= -->
   <div class="floating-player-box">
     <div class="player-header">
       <div class="live-tag">
@@ -796,19 +830,21 @@
 
   <!-- SCRIPTS -->
   <script>
-    // IDS DE GOOGLE SHEETS
+    // 4 HOJAS DE GOOGLE SHEETS CONECTADAS
     const NOTICIAS_SHEET_ID = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
     const LOGO_SHEET_ID     = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
     const REDES_SHEET_ID    = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
+    const HORARIOS_SHEET_ID = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
 
     const GVIZ_NOTICIAS_URL = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_LOGO_URL     = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_REDES_URL    = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
+    const GVIZ_HORARIOS_URL = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json`;
 
     const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
-    // Almacén global de noticias en memoria
     let noticiasGlobales = [];
+    let horariosGlobalesPorDia = {}; // Almacena la programación por día
 
     function procesarUrlImagen(rawUrl) {
       if (!rawUrl) return '';
@@ -979,13 +1015,10 @@
           }
         }
 
-        // Orden invertido (las últimas agregadas salen de primeras)
         noticias.reverse();
         noticiasGlobales = noticias;
 
         renderizarPortada(noticiasGlobales);
-
-        // Si el usuario recargó con un enlace de noticia directo (#noticia-X)
         verificarRutaHash();
       } catch (error) {
         console.error("Error al cargar noticias:", error);
@@ -994,7 +1027,6 @@
       }
     }
 
-    // Renderiza la portada principal
     function renderizarPortada(items) {
       const container = document.getElementById('gridInformativoBTV');
       if (!items || items.length === 0) {
@@ -1027,18 +1059,14 @@
       `).join('');
     }
 
-    // ================= 4. LÓGICA DE LA SUB-WEB (SPA) =================
-
-    // Abre la sub-web de la noticia seleccionada
+    // ================= 4. LÓGICA DE SUB-WEB (SPA) =================
     function abrirNoticia(id) {
       const articulo = noticiasGlobales.find(n => n.id === id);
       if (!articulo) return;
 
-      // Cambia de vista sin refrescar la página
       document.getElementById('vista-portada').style.display = 'none';
       document.getElementById('vista-noticia').style.display = 'block';
 
-      // 1. Datos de la noticia principal
       document.getElementById('detalleTag').textContent = articulo.tipo;
       document.getElementById('detalleTitulo').textContent = articulo.titulo;
       document.getElementById('detalleNoticia').textContent = articulo.noticia;
@@ -1048,7 +1076,7 @@
       imgElem.alt = articulo.titulo;
       imgElem.onerror = function() { this.src = imgPlaceholder; };
 
-      // 2. Lado Derecho: Noticias Recientes (las 5 más nuevas excepto la actual)
+      // Noticias Recientes
       const recientes = noticiasGlobales.filter(n => n.id !== id).slice(0, 5);
       const containerRecientes = document.getElementById('sidebarRecientes');
       
@@ -1066,7 +1094,7 @@
         containerRecientes.innerHTML = `<div style="font-size:12px; color:var(--text-muted);">No hay más noticias recientes.</div>`;
       }
 
-      // 3. Parte Inferior: Otras noticias del mismo tipo
+      // Otras noticias del mismo tipo
       const relacionadas = noticiasGlobales.filter(n => n.id !== id && n.tipo.trim().toLowerCase() === articulo.tipo.trim().toLowerCase());
       const gridRelacionadas = document.getElementById('gridRelacionadas');
       const tituloRel = document.getElementById('tituloRelacionadas');
@@ -1094,24 +1122,17 @@
         gridRelacionadas.innerHTML = `<div style="color:var(--text-muted); font-size:14px; grid-column: 1/-1;">No hay más noticias registradas en la categoría ${articulo.tipo}.</div>`;
       }
 
-      // Desplaza suavemente hacia arriba
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // Modifica la URL para que el usuario pueda compartir el enlace o usar la flecha atrás
       location.hash = `noticia-${id}`;
     }
 
-    // Vuelve a la portada principal
     function volverInicio() {
       document.getElementById('vista-noticia').style.display = 'none';
       document.getElementById('vista-portada').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // Limpia el hash en la barra de direcciones
       history.pushState("", document.title, window.location.pathname + window.location.search);
     }
 
-    // Soporte para botón atrás del navegador
     window.addEventListener('popstate', () => {
       verificarRutaHash();
     });
@@ -1126,12 +1147,168 @@
       }
     }
 
-    // Iniciar cargas
+    // ================= 5. CARGAR HORARIOS DE EMISIÓN (LÍNEA 5 = DÍAS, COL A = HORA) =================
+    async function cargarHorariosDesdeSheet() {
+      try {
+        const response = await fetch(GVIZ_HORARIOS_URL);
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        if (!data.table || !data.table.rows || data.table.rows.length === 0) {
+          document.getElementById('listHorarios').innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay horarios disponibles.</div>`;
+          return;
+        }
+
+        const rows = data.table.rows;
+
+        // Fila 5 en Excel corresponde al índice 4 (0-based)
+        let filaEncabezados = 4;
+        if (rows.length <= filaEncabezados) {
+          filaEncabezados = 0;
+        } else {
+          // Si en filas 0 a 6 se detecta 'lunes', 'martes' o 'hora', ajusta la fila
+          for (let r = 0; r < Math.min(rows.length, 7); r++) {
+            const textoFila = (rows[r].c || []).map(c => String(c?.v || '').toLowerCase()).join(' ');
+            if (textoFila.includes('lunes') || textoFila.includes('martes') || textoFila.includes('hora')) {
+              filaEncabezados = r;
+              break;
+            }
+          }
+        }
+
+        const celdasFila5 = rows[filaEncabezados]?.c || [];
+        const diasColumnas = [];
+
+        // Detectar columnas de días de la semana a partir de la columna B (índice 1 en adelante)
+        celdasFila5.forEach((celda, idx) => {
+          const val = String(celda?.v || '').trim();
+          if (val && idx > 0) {
+            diasColumnas.push({ colIndex: idx, nombreDia: val });
+          }
+        });
+
+        // Si es formato matriz semanal (varios días en la fila 5)
+        if (diasColumnas.length > 0) {
+          horariosGlobalesPorDia = {};
+          diasColumnas.forEach(d => {
+            horariosGlobalesPorDia[d.nombreDia] = [];
+          });
+
+          // Leer las filas posteriores a la fila 5
+          for (let i = filaEncabezados + 1; i < rows.length; i++) {
+            const cells = rows[i].c;
+            if (!cells) continue;
+
+            // Columna A = La Hora
+            const hora = String(cells[0]?.v ?? '').trim();
+            if (!hora) continue;
+
+            // Recorrer cada columna de día para esa hora
+            diasColumnas.forEach(d => {
+              const programa = String(cells[d.colIndex]?.v ?? '').trim();
+              if (programa && programa !== '-' && programa !== '.') {
+                horariosGlobalesPorDia[d.nombreDia].push({
+                  hora: hora,
+                  programa: programa,
+                  dia: d.nombreDia
+                });
+              }
+            });
+          }
+
+          renderizarPestañasYHorarios(diasColumnas);
+        } else {
+          // Formato lista simple en caso de que solo haya una columna
+          const itemsLista = [];
+          for (let i = filaEncabezados + 1; i < rows.length; i++) {
+            const cells = rows[i].c;
+            if (!cells) continue;
+            const h = String(cells[0]?.v ?? '').trim();
+            const p = String(cells[1]?.v ?? '').trim();
+            if (h || p) {
+              itemsLista.push({ hora: h, programa: p, dia: 'Programación Regular' });
+            }
+          }
+          document.getElementById('scheduleTabs').style.display = 'none';
+          document.getElementById('listHorarios').innerHTML = itemsLista.map(item => `
+            <div class="schedule-item">
+              <div class="schedule-time-badge"><span class="schedule-time">${item.hora}</span></div>
+              <div class="schedule-info">
+                <div class="schedule-prog-title">${item.programa}</div>
+                <small class="schedule-day-label">${item.dia}</small>
+              </div>
+            </div>
+          `).join('');
+        }
+
+      } catch (e) {
+        console.warn("Error cargando hoja de horarios:", e);
+        document.getElementById('listHorarios').innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No se pudo conectar a la hoja de horarios.</div>`;
+      }
+    }
+
+    // Renderiza pestañas de días y activa el día actual
+    function renderizarPestañasYHorarios(diasColumnas) {
+      const containerTabs = document.getElementById('scheduleTabs');
+      const diasSemanaNombres = ['domingo', 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado'];
+      const diaSemanaHoy = diasSemanaNombres[new Date().getDay()];
+
+      // Buscar si el día de hoy coincide con alguna pestaña
+      let diaSeleccionado = diasColumnas[0].nombreDia;
+      const diaEncontrado = diasColumnas.find(d => d.nombreDia.toLowerCase().includes(diaSemanaHoy));
+      if (diaEncontrado) {
+        diaSeleccionado = diaEncontrado.nombreDia;
+      }
+
+      containerTabs.innerHTML = diasColumnas.map(d => `
+        <button 
+          class="day-tab-btn ${d.nombreDia === diaSeleccionado ? 'active' : ''}" 
+          onclick="cambiarDiaHorario('${d.nombreDia.replace(/'/g, "\\'")}', this)">
+          ${d.nombreDia}
+        </button>
+      `).join('');
+
+      mostrarProgramasDelDia(diaSeleccionado);
+    }
+
+    // Cambia el día mostrado al pulsar un botón
+    function cambiarDiaHorario(nombreDia, botonElem) {
+      document.querySelectorAll('.day-tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (botonElem) botonElem.classList.add('active');
+      mostrarProgramasDelDia(nombreDia);
+    }
+
+    // Muestra los programas del día en la lista
+    function mostrarProgramasDelDia(nombreDia) {
+      const container = document.getElementById('listHorarios');
+      const lista = horariosGlobalesPorDia[nombreDia] || [];
+
+      if (lista.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; padding: 10px;">No hay programas registrados para ${nombreDia}.</div>`;
+        return;
+      }
+
+      container.innerHTML = lista.map(item => `
+        <div class="schedule-item">
+          <div class="schedule-time-badge">
+            <span class="schedule-time">${item.hora}</span>
+          </div>
+          <div class="schedule-info">
+            <div class="schedule-prog-title">${item.programa}</div>
+            <small class="schedule-day-label">${item.dia}</small>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Inicializar todas las fuentes de datos de Google Sheets
     cargarRedesDesdeSheet();
     cargarLogoDesdeSheet();
     cargarInformativoDesdeSheet();
+    cargarHorariosDesdeSheet();
 
-    /* ================= 5. REPRODUCTOR ESQUINA INFERIOR DERECHA ================= */
+    /* ================= 6. REPRODUCTOR EN ESQUINA INFERIOR DERECHA ================= */
     const streamUrl = "https://live20.bozztv.com/giatv/giatv-barinastv1234/barinastv1234/chunks.m3u8";
     const video = document.getElementById('videoPlayer');
     const overlay = document.getElementById('clickPlayOverlay');
