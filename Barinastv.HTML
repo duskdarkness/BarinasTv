@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Noticias</title>
+  <title>BARINAS TV | Señal Oficial & Programación</title>
 
   <!-- Evita bloqueos de imagen y recursos por parte de servidores externos -->
   <meta name="referrer" content="no-referrer">
@@ -37,11 +37,10 @@
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
-      user-select: none; /* Evita selección o clics accidentales de texto */
-      cursor: default;   /* Cursor normal en todo el contenido */
+      user-select: none;
+      cursor: default;
     }
 
-    /* Permite lectura natural únicamente dentro de los artículos de noticias */
     .article-body-content, .news-body-text {
       user-select: text;
       cursor: text;
@@ -54,7 +53,7 @@
     .program-card, 
     .day-tab-btn, 
     .social-btn:not(.disabled), 
-    .brand-container, 
+    .brand-banner-container, 
     .video-viewport, 
     .btn-back,
     .recent-item,
@@ -99,75 +98,59 @@
       user-select: none;
     }
 
-    /* ================= HEADER & LOGO + BANNER ================= */
+    /* ================= HEADER: TODA LA LÍNEA ES EL BANNER (SIN LETRAS BLANCAS) ================= */
     header {
       position: sticky;
       top: 0;
       z-index: 40;
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      width: 100%;
+    }
+    
+    /* Contenedor que abarca toda la línea con el banner */
+    .brand-banner-container {
+      width: 100%;
+      background: #05070a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 50px;
+      overflow: hidden;
+    }
+
+    .brand-banner-img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      max-height: 85px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Sub-barra de secciones */
+    .sub-nav-bar {
       background: rgba(9, 10, 15, 0.95);
       backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 8px 24px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .brand-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: nowrap;
-    }
-    #brandLogoContainer {
-      display: flex;
-      align-items: center;
-      min-height: 38px;
-    }
-    .logo-box {
-      background: var(--red);
-      color: white;
-      font-weight: 800;
-      font-size: 13px;
-      padding: 5px 10px;
-      border-radius: 6px;
-      letter-spacing: 0.5px;
-    }
-    .brand-logo-img {
-      height: 40px;
-      max-width: 140px;
-      object-fit: contain;
-      display: block;
-      border-radius: 4px;
-    }
-    .brand-title {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-    /* Banner al lado del logo */
-    #brandBannerContainer {
-      display: flex;
-      align-items: center;
-      margin-left: 8px;
-    }
-    .brand-banner-img {
-      height: 38px;
-      max-width: 260px;
-      object-fit: contain;
-      display: block;
-      border-radius: 4px;
+      justify-content: center;
     }
     .nav-links {
       display: flex;
-      gap: 20px;
+      gap: 24px;
       list-style: none;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .nav-links a {
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
       color: var(--text-muted);
-      cursor: default; /* No clickeable como solicitado */
+      cursor: default;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     /* ================= CONTENEDOR GENERAL ================= */
@@ -334,7 +317,7 @@
       transition: color 0.2s ease;
     }
 
-    /* ================= CARDS DE NOTICIAS VARYNA (PDF READY) ================= */
+    /* ================= CARDS DE NOTICIAS VARYNA ================= */
     .pdf-badge {
       background: rgba(37, 99, 235, 0.18);
       color: #93c5fd;
@@ -835,8 +818,7 @@
     @media (max-width: 900px) {
       .article-layout { grid-template-columns: 1fr; }
       .article-main { padding: 20px; }
-      .nav-links { display: none; }
-      .brand-banner-img { max-width: 160px; }
+      .brand-banner-img { max-height: 65px; }
       .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
       .grid { grid-template-columns: 1fr; }
       .schedule-item { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -862,17 +844,12 @@
     </div>
   </div>
 
-  <!-- HEADER FIJO CON LOGO + BANNER BARINAS TV -->
+  <!-- HEADER: EL BANNER ABARCA TODA LA LÍNEA (SIN TEXTO BLANCO) -->
   <header>
-    <div class="brand-container" onclick="volverInicio()">
-      <div id="brandLogoContainer">
-        <div class="logo-box">BTV</div>
-      </div>
-      <span class="brand-title">BARINAS TV</span>
-      <!-- BANNER CARGADO DINÁMICAMENTE DESDE GOOGLE SHEETS -->
-      <div id="brandBannerContainer"></div>
+    <div class="brand-banner-container" id="brandBannerContainer" onclick="volverInicio()" title="Barinas TV - Volver al inicio">
+      <!-- El banner oficial se inserta aquí ocupando toda la línea -->
     </div>
-    <nav>
+    <nav class="sub-nav-bar">
       <ul class="nav-links">
         <li><a>Informativo BTV</a></li>
         <li><a>Noticias Varyna</a></li>
@@ -1033,7 +1010,6 @@
   <script>
     // HOJAS DE GOOGLE SHEETS
     const NOTICIAS_SHEET_ID  = "1EMGn3_ifOw7RsehifPc66vYJ3V-Sk6kAjFpP1_N14xI";
-    const LOGO_SHEET_ID      = "1VAkHEX_Tj9hBn_-0gDSlNOQm-kJGohfMJN7IUuQq0Dc";
     const REDES_SHEET_ID     = "1msYj0OdkRtUC3OuZnJb5s6X_p-i_ZQjJ0tX1VT-MAuc";
     const HORARIOS_SHEET_ID  = "1t0q6SiNAKwiT59vxI8iNcHhxlWkhiLGHzjDyX-qDp3Q";
     const HORARIOS_GID       = "146301221";
@@ -1042,7 +1018,6 @@
     const BANNER_SHEET_ID    = "1pKGeTqc81WT_vIYiMCJ4nmTTFMLhBVwXHLtOGsFEWWY";
 
     const GVIZ_NOTICIAS_URL  = `https://docs.google.com/spreadsheets/d/${NOTICIAS_SHEET_ID}/gviz/tq?tqx=out:json`;
-    const GVIZ_LOGO_URL      = `https://docs.google.com/spreadsheets/d/${LOGO_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_REDES_URL     = `https://docs.google.com/spreadsheets/d/${REDES_SHEET_ID}/gviz/tq?tqx=out:json`;
     const GVIZ_HORARIOS_URL  = `https://docs.google.com/spreadsheets/d/${HORARIOS_SHEET_ID}/gviz/tq?tqx=out:json&gid=${HORARIOS_GID}`;
     const GVIZ_PROGRAMAS_URL = `https://docs.google.com/spreadsheets/d/${PROGRAMAS_SHEET_ID}/gviz/tq?tqx=out:json`;
@@ -1147,38 +1122,7 @@
       }
     }
 
-    // ================= 2. LOGO & BANNER =================
-    async function cargarLogoDesdeSheet() {
-      try {
-        const response = await fetch(GVIZ_LOGO_URL);
-        const text = await response.text();
-        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonString);
-
-        if (data.table && data.table.rows && data.table.rows.length > 0) {
-          let logoFinal = '';
-          for (const row of data.table.rows) {
-            if (!row.c) continue;
-            for (const cell of row.c) {
-              const val = (cell?.v ?? '').toString().trim();
-              if (val.includes('http') || val.includes('drive.google.com')) {
-                logoFinal = procesarUrlImagen(val);
-                break;
-              }
-            }
-            if (logoFinal) break;
-          }
-
-          if (logoFinal) {
-            document.getElementById('brandLogoContainer').innerHTML = 
-              `<img src="${logoFinal}" alt="Barinas TV Logo" class="brand-logo-img" referrerpolicy="no-referrer">`;
-          }
-        }
-      } catch (e) {
-        console.warn("Logo remoto no disponible:", e);
-      }
-    }
-
+    // ================= 2. BANNER QUE ABARCA TODA LA LÍNEA =================
     async function cargarBannerDesdeSheet() {
       try {
         const response = await fetch(GVIZ_BANNER_URL);
@@ -1202,7 +1146,7 @@
 
           if (bannerFinal) {
             document.getElementById('brandBannerContainer').innerHTML = 
-              `<img src="${bannerFinal}" alt="Banner Barinas TV" class="brand-banner-img" referrerpolicy="no-referrer">`;
+              `<img src="${bannerFinal}" alt="Barinas TV Banner" class="brand-banner-img" referrerpolicy="no-referrer">`;
           }
         }
       } catch (e) {
@@ -1407,7 +1351,6 @@
         let colTitulo = 0, colDesc = 1, colImagen = 2, colPDF = 3;
         let startIndex = 0;
 
-        // Inspección de encabezados
         if (rows.length > 0 && rows[0].c) {
           rows[0].c.forEach((cell, idx) => {
             const val = String(cell?.v || '').toLowerCase();
@@ -1484,12 +1427,11 @@
       }).join('');
     }
 
-    // ================= FUNCIONES DEL VISOR DE PDF EN LÍNEA =================
+    // ================= VISOR DE PDF EN LÍNEA =================
     function abrirVisorPDF(urlRaw, titulo) {
       if (!urlRaw) return;
       let url = urlRaw.trim();
 
-      // Conversión de Google Drive para visor embebido
       const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
       if (driveMatch && driveMatch[1]) {
         url = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
@@ -1514,7 +1456,7 @@
       }
     }
 
-    // ================= 5. PROGRAMAS (CON MINIATURA DE YOUTUBE) =================
+    // ================= 5. PROGRAMAS (YOUTUBE MINIATURA) =================
     async function cargarProgramasDesdeSheet() {
       try {
         const response = await fetch(GVIZ_PROGRAMAS_URL);
@@ -1858,9 +1800,8 @@
       `).join('');
     }
 
-    // Inicializar cargas de todas las hojas de Google Sheets
+    // Inicializar cargas de las hojas de Google Sheets
     cargarRedesDesdeSheet();
-    cargarLogoDesdeSheet();
     cargarBannerDesdeSheet();
     cargarInformativoDesdeSheet();
     cargarNoticiasVarynaDesdeSheet();
