@@ -41,7 +41,7 @@
       cursor: default;
     }
 
-    .article-body-content, .news-body-text {
+    .article-body-content, .news-body-text, input {
       user-select: text;
       cursor: text;
     }
@@ -58,7 +58,8 @@
     .btn-back,
     .recent-item,
     .modal-close-btn,
-    .pdf-open-ext {
+    .pdf-open-ext,
+    .btn-folder-drive {
       cursor: pointer !important;
     }
 
@@ -98,7 +99,7 @@
       user-select: none;
     }
 
-    /* ================= HEADER: TODA LA LÍNEA ES EL BANNER (SIN LETRAS BLANCAS) ================= */
+    /* ================= HEADER: EL BANNER ABARCA TODA LA LÍNEA ================= */
     header {
       position: sticky;
       top: 0;
@@ -108,7 +109,6 @@
       width: 100%;
     }
     
-    /* Contenedor que abarca toda la línea con el banner */
     .brand-banner-container {
       width: 100%;
       background: #05070a;
@@ -128,7 +128,6 @@
       display: block;
     }
 
-    /* Sub-barra de secciones */
     .sub-nav-bar {
       background: rgba(9, 10, 15, 0.95);
       backdrop-filter: blur(10px);
@@ -315,6 +314,73 @@
       align-items: center;
       gap: 5px;
       transition: color 0.2s ease;
+    }
+
+    /* ================= BUSCADOR & BARRA DE NOTICIAS VARYNA ================= */
+    .varyna-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .varyna-search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 250px;
+      background: #080a10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+    .varyna-search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      width: 100%;
+    }
+    .varyna-search-box input::placeholder {
+      color: #64748b;
+    }
+    .btn-clear-search {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      display: none;
+    }
+    .varyna-counter {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .btn-folder-drive {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      color: #93c5fd;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 16px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-folder-drive:hover {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
     }
 
     /* ================= CARDS DE NOTICIAS VARYNA ================= */
@@ -818,6 +884,7 @@
     @media (max-width: 900px) {
       .article-layout { grid-template-columns: 1fr; }
       .article-main { padding: 20px; }
+      .nav-links { display: none; }
       .brand-banner-img { max-height: 65px; }
       .floating-player-box { width: 300px; bottom: 12px; right: 12px; }
       .grid { grid-template-columns: 1fr; }
@@ -881,11 +948,32 @@
         </div>
       </section>
 
-      <!-- SECCIÓN NOTICIAS VARYNA (CONECTADA A GOOGLE SHEETS + VISOR PDF) -->
+      <!-- SECCIÓN NOTICIAS VARYNA (CON BUSCADOR, ORDEN CRONOLÓGICO Y VISOR PDF) -->
       <section id="noticias-varyna">
-        <div class="section-header">
-          <h2 class="section-title">Noticias Varyna (Edición Digital)</h2>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 class="section-title">Noticias Varyna &bull; Ediciones en PDF</h2>
+          </div>
+          <!-- Enlace directo a tu carpeta de Google Drive -->
+          <a href="https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing" target="_blank" class="btn-folder-drive" title="Abrir carpeta de Google Drive">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>
+            </svg>
+            Ver Carpeta en Drive ↗
+          </a>
         </div>
+
+        <!-- BARRA DEL BUSCADOR DE NOTICIAS VARYNA -->
+        <div class="varyna-toolbar">
+          <div class="varyna-search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="inputBuscarVaryna" placeholder="Buscar edición por fecha, titular o palabra clave..." oninput="filtrarNoticiasVaryna()">
+            <button class="btn-clear-search" id="btnClearVaryna" onclick="limpiarBuscadorVaryna()" title="Limpiar búsqueda">&times;</button>
+          </div>
+          <div class="varyna-counter" id="varynaCounterInfo">Mostrando ediciones más recientes</div>
+        </div>
+
+        <!-- Grilla de Ediciones PDF de Noticias Varyna -->
         <div class="grid" id="gridNoticiasVaryna">
           <div style="color:var(--text-muted); font-size:14px;">Cargando ediciones de Noticias Varyna...</div>
         </div>
@@ -1027,6 +1115,7 @@
     const imgPlaceholder = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&q=80";
 
     let noticiasGlobales = [];
+    let listaVarynaGlobal = [];
     let horariosGlobalesPorDia = {};
 
     function procesarUrlImagen(rawUrl) {
@@ -1333,7 +1422,7 @@
       }
     }
 
-    // ================= 4. NOTICIAS VARYNA DESDE EXCEL CON VISOR PDF =================
+    // ================= 4. NOTICIAS VARYNA (ORDENADO + BUSCADOR + VISOR PDF) =================
     async function cargarNoticiasVarynaDesdeSheet() {
       try {
         const response = await fetch(GVIZ_VARYNA_URL);
@@ -1354,13 +1443,13 @@
         if (rows.length > 0 && rows[0].c) {
           rows[0].c.forEach((cell, idx) => {
             const val = String(cell?.v || '').toLowerCase();
-            if (val.includes('titulo') || val.includes('nombre')) colTitulo = idx;
+            if (val.includes('titulo') || val.includes('nombre') || val.includes('edicion')) colTitulo = idx;
             else if (val.includes('desc') || val.includes('resumen') || val.includes('nota')) colDesc = idx;
             else if (val.includes('img') || val.includes('foto') || val.includes('portada')) colImagen = idx;
-            else if (val.includes('pdf') || val.includes('enlace') || val.includes('archivo')) colPDF = idx;
+            else if (val.includes('pdf') || val.includes('enlace') || val.includes('archivo') || val.includes('drive')) colPDF = idx;
           });
           const v0 = String(rows[0].c[0]?.v || '').toLowerCase();
-          if (v0.includes('titulo') || v0.includes('edicion') || v0.includes('noticia')) {
+          if (v0.includes('titulo') || v0.includes('edicion') || v0.includes('noticia') || v0.includes('fecha')) {
             startIndex = 1;
           }
         }
@@ -1373,19 +1462,35 @@
           const titulo = String(cells[colTitulo]?.v ?? '').trim();
           const desc = String(cells[colDesc]?.v ?? '').trim();
           const imagenRaw = String(cells[colImagen]?.v ?? '').trim();
-          const pdfRaw = String(cells[colPDF]?.v ?? '').trim();
+          let pdfRaw = String(cells[colPDF]?.v ?? '').trim();
+
+          // Si en alguna celda se colocó directamente el enlace a la carpeta o archivo
+          if (!pdfRaw) {
+            cells.forEach(c => {
+              const val = String(c?.v || '').trim();
+              if (val.includes('drive.google.com') || val.endsWith('.pdf')) {
+                pdfRaw = val;
+              }
+            });
+          }
 
           if (titulo || desc || pdfRaw) {
             listaVaryna.push({
-              titulo: titulo || 'Edición Digital Varyna',
-              desc: desc || '',
+              titulo: titulo || 'Edición Digital Noticias Varyna',
+              desc: desc || 'Edición oficial disponible para lectura en formato PDF.',
               imagen: procesarUrlImagen(imagenRaw) || imgPlaceholder,
-              pdf: pdfRaw
+              pdf: pdfRaw || 'https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing'
             });
           }
         }
 
-        renderizarNoticiasVaryna(listaVaryna);
+        // ORDEN CRONOLÓGICO: Del más reciente al más antiguo
+        listaVaryna.reverse();
+        listaVarynaGlobal = listaVaryna;
+
+        renderizarNoticiasVaryna(listaVarynaGlobal);
+        actualizarContadorVaryna(listaVarynaGlobal.length, true);
+
       } catch (e) {
         console.warn("Error cargando Noticias Varyna:", e);
         document.getElementById('gridNoticiasVaryna').innerHTML = 
@@ -1396,14 +1501,15 @@
     function renderizarNoticiasVaryna(items) {
       const container = document.getElementById('gridNoticiasVaryna');
       if (!items || items.length === 0) {
-        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px;">No hay ediciones disponibles.</div>`;
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:14px; grid-column:1/-1;">No se encontraron ediciones que coincidan con la búsqueda.</div>`;
         return;
       }
 
       container.innerHTML = items.map(item => {
-        const tienePDF = Boolean(item.pdf && item.pdf.startsWith('http'));
+        const enlacePDF = item.pdf || 'https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing';
+
         return `
-          <article class="news-card clickable" onclick="${tienePDF ? `abrirVisorPDF('${item.pdf.replace(/'/g, "\\'")}', '${item.titulo.replace(/'/g, "\\'")}')` : ''}">
+          <article class="news-card clickable" onclick="abrirVisorPDF('${enlacePDF.replace(/'/g, "\\'")}', '${item.titulo.replace(/'/g, "\\'")}')">
             <div class="news-header">
               <span class="news-tag pdf-badge">Edición Digital PDF</span>
               <h3 class="news-title">${item.titulo}</h3>
@@ -1414,12 +1520,10 @@
               <img src="${item.imagen}" class="news-bg-img" alt="${item.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}';">
               <div class="news-body-overlay">
                 <p class="news-body-text">${item.desc}</p>
-                ${tienePDF ? `
-                  <button class="btn-pdf-action">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    Leer Edición PDF
-                  </button>
-                ` : ''}
+                <button class="btn-pdf-action">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  Leer Edición PDF
+                </button>
               </div>
             </div>
           </article>
@@ -1427,16 +1531,65 @@
       }).join('');
     }
 
+    // Lógica del buscador en tiempo real
+    function filtrarNoticiasVaryna() {
+      const input = document.getElementById('inputBuscarVaryna');
+      const btnClear = document.getElementById('btnClearVaryna');
+      const query = input ? normalizarTexto(input.value) : '';
+
+      if (btnClear) {
+        btnClear.style.display = query ? 'block' : 'none';
+      }
+
+      if (!query) {
+        renderizarNoticiasVaryna(listaVarynaGlobal);
+        actualizarContadorVaryna(listaVarynaGlobal.length, true);
+        return;
+      }
+
+      const resultados = listaVarynaGlobal.filter(item => {
+        const tit = normalizarTexto(item.titulo);
+        const desc = normalizarTexto(item.desc);
+        return tit.includes(query) || desc.includes(query);
+      });
+
+      renderizarNoticiasVaryna(resultados);
+      actualizarContadorVaryna(resultados.length, false);
+    }
+
+    function limpiarBuscadorVaryna() {
+      const input = document.getElementById('inputBuscarVaryna');
+      if (input) input.value = '';
+      filtrarNoticiasVaryna();
+    }
+
+    function actualizarContadorVaryna(cantidad, esTotal) {
+      const info = document.getElementById('varynaCounterInfo');
+      if (!info) return;
+      if (esTotal) {
+        info.textContent = `Mostrando ${cantidad} ediciones (más recientes primero)`;
+      } else {
+        info.textContent = `${cantidad} edición(es) encontrada(s)`;
+      }
+    }
+
     // ================= VISOR DE PDF EN LÍNEA =================
     function abrirVisorPDF(urlRaw, titulo) {
       if (!urlRaw) return;
       let url = urlRaw.trim();
 
-      const driveMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
-      if (driveMatch && driveMatch[1]) {
-        url = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
-      } else if (!url.includes('docs.google.com/viewer') && !url.includes('drive.google.com')) {
-        url = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      // Si es una carpeta de Drive completa
+      const folderMatch = url.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
+      if (folderMatch && folderMatch[1]) {
+        url = `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#grid`;
+      } else {
+        // Si es un archivo individual de Drive
+        const fileMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+        if (fileMatch && fileMatch[1]) {
+          url = `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+        } else if (!url.includes('docs.google.com/viewer') && !url.includes('drive.google.com')) {
+          url = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+        }
       }
 
       document.getElementById('pdfModalTitulo').textContent = titulo || 'Edición Digital - Noticias Varyna';
