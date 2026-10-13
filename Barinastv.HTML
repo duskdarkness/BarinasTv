@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BARINAS TV | Señal Oficial & Programación</title>
+  <title>BARINAS TV | Señal Oficial & Noticias</title>
 
   <!-- Evita bloqueos de imagen y recursos por parte de servidores externos -->
   <meta name="referrer" content="no-referrer">
@@ -59,7 +59,8 @@
     .recent-item,
     .modal-close-btn,
     .pdf-open-ext,
-    .btn-folder-drive {
+    .btn-folder-drive,
+    .pdf-btn-action {
       cursor: pointer !important;
     }
 
@@ -99,7 +100,7 @@
       user-select: none;
     }
 
-    /* ================= HEADER: EL BANNER ABARCA TODA LA LÍNEA ================= */
+    /* ================= HEADER: EL BANNER ABARCA TODA LA LÍNEA (SIN LETRAS BLANCAS) ================= */
     header {
       position: sticky;
       top: 0;
@@ -316,7 +317,7 @@
       transition: color 0.2s ease;
     }
 
-    /* ================= BUSCADOR & BARRA DE NOTICIAS VARYNA ================= */
+    /* ================= SECCIÓN NOTICIAS VARYNA: VISOR DE PDF INTEGRADO ================= */
     .varyna-toolbar {
       display: flex;
       justify-content: space-between;
@@ -327,7 +328,7 @@
       border: 1px solid var(--border);
       padding: 12px 18px;
       border-radius: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .varyna-search-box {
       display: flex;
@@ -349,9 +350,7 @@
       font-size: 14px;
       width: 100%;
     }
-    .varyna-search-box input::placeholder {
-      color: #64748b;
-    }
+    .varyna-search-box input::placeholder { color: #64748b; }
     .btn-clear-search {
       background: transparent;
       border: none;
@@ -383,13 +382,77 @@
       border-color: #2563eb;
     }
 
-    /* ================= CARDS DE NOTICIAS VARYNA ================= */
+    /* CONTENEDOR DEL VISOR DE PDF INCORPORADO EN LA PÁGINA */
+    .embedded-pdf-container {
+      width: 100%;
+      background: #0d111a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    }
+    .embedded-pdf-bar {
+      background: #161b26;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .embedded-pdf-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .embedded-pdf-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pdf-btn-action {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .pdf-btn-action:hover {
+      background: var(--red);
+      color: #fff;
+      border-color: var(--red);
+    }
+    .embedded-pdf-frame-wrapper {
+      width: 100%;
+      height: 650px; /* Altura cómoda de lectura en la web */
+      background: #05070c;
+      position: relative;
+    }
+    .embedded-pdf-frame-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Cards de selección de Noticias Varyna */
     .pdf-badge {
       background: rgba(37, 99, 235, 0.18);
       color: #93c5fd;
       border: 1px solid rgba(37, 99, 235, 0.35);
     }
-    .btn-pdf-action {
+    .btn-read-pdf-card {
       background: var(--red);
       color: white;
       font-size: 13px;
@@ -403,7 +466,7 @@
       border: none;
       transition: background 0.2s ease, transform 0.2s ease;
     }
-    .news-card:hover .btn-pdf-action {
+    .news-card:hover .btn-read-pdf-card {
       background: #ef4444;
       transform: translateX(3px);
     }
@@ -714,7 +777,7 @@
       font-weight: 600;
     }
 
-    /* ================= MODAL VISOR DE PDF INTEGRADO ================= */
+    /* ================= MODAL DE AMPLIACIÓN DE PDF ================= */
     .pdf-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -736,7 +799,7 @@
     .pdf-modal-window {
       width: 100%;
       max-width: 1060px;
-      height: 90vh;
+      height: 92vh;
       background: #0f131c;
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 14px;
@@ -890,6 +953,7 @@
       .grid { grid-template-columns: 1fr; }
       .schedule-item { flex-direction: column; align-items: flex-start; gap: 8px; }
       .schedule-info { margin-left: 0; }
+      .embedded-pdf-frame-wrapper { height: 480px; }
     }
   </style>
 </head>
@@ -914,7 +978,7 @@
   <!-- HEADER: EL BANNER ABARCA TODA LA LÍNEA (SIN TEXTO BLANCO) -->
   <header>
     <div class="brand-banner-container" id="brandBannerContainer" onclick="volverInicio()" title="Barinas TV - Volver al inicio">
-      <!-- El banner oficial se inserta aquí ocupando toda la línea -->
+      <!-- Banner cargado desde Google Sheets -->
     </div>
     <nav class="sub-nav-bar">
       <ul class="nav-links">
@@ -948,13 +1012,15 @@
         </div>
       </section>
 
-      <!-- SECCIÓN NOTICIAS VARYNA (CON BUSCADOR, ORDEN CRONOLÓGICO Y VISOR PDF) -->
+      <!-- =========================================================
+           SECCIÓN NOTICIAS VARYNA: CON VISOR INCORPORADO EN LA PÁGINA
+           ========================================================= -->
       <section id="noticias-varyna">
         <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2 class="section-title">Noticias Varyna &bull; Ediciones en PDF</h2>
           </div>
-          <!-- Enlace directo a tu carpeta de Google Drive -->
+          <!-- Enlace directo a tu carpeta en la nube de Google Drive -->
           <a href="https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing" target="_blank" class="btn-folder-drive" title="Abrir carpeta de Google Drive">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>
@@ -963,19 +1029,41 @@
           </a>
         </div>
 
-        <!-- BARRA DEL BUSCADOR DE NOTICIAS VARYNA -->
+        <!-- 1. VISOR DE PDF INTEGRADO DIRECTAMENTE EN LA WEB (LEÍBLE AQUÍ MISMO) -->
+        <div class="embedded-pdf-container" id="visorPdfSection">
+          <div class="embedded-pdf-bar">
+            <div class="embedded-pdf-title">
+              <span class="news-tag" style="background:rgba(220,38,38,0.25); color:#fca5a5; margin:0;">PDF EN VIVO</span>
+              <span id="visorPdfTituloEnPagina">Cargando documento...</span>
+            </div>
+            <div class="embedded-pdf-actions">
+              <button class="pdf-btn-action" onclick="maximizarPdfModal()" title="Ampliar a pantalla completa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                Maximizar
+              </button>
+              <a id="btnAbrirEnPestana" href="#" target="_blank" class="pdf-btn-action" title="Abrir en Google Drive">
+                Abrir en Drive ↗
+              </a>
+            </div>
+          </div>
+          <div class="embedded-pdf-frame-wrapper">
+            <iframe id="pdfIframeEnPagina" src="" allow="autoplay"></iframe>
+          </div>
+        </div>
+
+        <!-- 2. BUSCADOR INTERACTIVO Y CONTADOR -->
         <div class="varyna-toolbar">
           <div class="varyna-search-box">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="inputBuscarVaryna" placeholder="Buscar edición por fecha, titular o palabra clave..." oninput="filtrarNoticiasVaryna()">
+            <input type="text" id="inputBuscarVaryna" placeholder="Buscar edición por fecha, número o titular..." oninput="filtrarNoticiasVaryna()">
             <button class="btn-clear-search" id="btnClearVaryna" onclick="limpiarBuscadorVaryna()" title="Limpiar búsqueda">&times;</button>
           </div>
-          <div class="varyna-counter" id="varynaCounterInfo">Mostrando ediciones más recientes</div>
+          <div class="varyna-counter" id="varynaCounterInfo">Ordenadas de la más reciente a la más antigua</div>
         </div>
 
-        <!-- Grilla de Ediciones PDF de Noticias Varyna -->
+        <!-- 3. GRILLA DE EDICIONES DISPONIBLES (SELECCIONABLES) -->
         <div class="grid" id="gridNoticiasVaryna">
-          <div style="color:var(--text-muted); font-size:14px;">Cargando ediciones de Noticias Varyna...</div>
+          <div style="color:var(--text-muted); font-size:14px;">Cargando ediciones disponibles...</div>
         </div>
       </section>
 
@@ -1053,21 +1141,18 @@
 
   </main>
 
-  <!-- ================= MODAL VISOR DE PDF INTEGRADO EN LA WEB ================= -->
+  <!-- ================= MODAL DE PANTALLA COMPLETA PARA PDF ================= -->
   <div id="modalVisorPDF" class="pdf-modal-backdrop" onclick="cerrarVisorPDFSiFondo(event)">
     <div class="pdf-modal-window">
       <div class="pdf-modal-header">
         <div class="pdf-modal-title">
           <span class="news-tag" style="background:rgba(220,38,38,0.25); color:#fca5a5;">PDF</span>
-          <span id="pdfModalTitulo">Leyendo Edición Digital</span>
+          <span id="pdfModalTitulo">Lectura a Pantalla Completa</span>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <a id="pdfModalExterno" href="#" target="_blank" class="pdf-open-ext" title="Abrir en pestaña nueva" style="color:var(--text-muted); font-size:13px; font-weight:700;">Abrir ↗</a>
-          <button class="modal-close-btn" onclick="cerrarVisorPDF()" title="Cerrar">&times;</button>
-        </div>
+        <button class="modal-close-btn" onclick="cerrarVisorPDF()" title="Cerrar">&times;</button>
       </div>
       <div class="pdf-modal-body">
-        <iframe id="pdfIframe" src="" allow="autoplay"></iframe>
+        <iframe id="pdfIframeModal" src="" allow="autoplay"></iframe>
       </div>
     </div>
   </div>
@@ -1117,6 +1202,7 @@
     let noticiasGlobales = [];
     let listaVarynaGlobal = [];
     let horariosGlobalesPorDia = {};
+    let urlActualPdfEnPagina = '';
 
     function procesarUrlImagen(rawUrl) {
       if (!rawUrl) return '';
@@ -1149,6 +1235,30 @@
       return match ? match[1] : null;
     }
 
+    // ================= CONVERSOR DE ENLACE DE PDF A VISOR WEB =================
+    function convertirEnlaceParaVisorWeb(urlRaw) {
+      if (!urlRaw) return '';
+      let url = urlRaw.trim();
+
+      // Enlace directo a un archivo de Google Drive
+      const fileMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
+      if (fileMatch && fileMatch[1]) {
+        return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+      }
+
+      // Si es un archivo .pdf directo de cualquier otro servidor
+      if (url.endsWith('.pdf') || url.includes('.pdf?')) {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+      }
+
+      // Enlace de Google Docs / Viewer
+      if (url.includes('docs.google.com/viewer') || url.includes('drive.google.com/file/d/')) {
+        return url;
+      }
+
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    }
+
     // ================= 1. REDES SOCIALES =================
     async function cargarRedesDesdeSheet() {
       try {
@@ -1162,7 +1272,6 @@
 
           data.table.rows.forEach(row => {
             if (!row.c) return;
-
             const col0 = String(row.c[0]?.v || '').trim().toLowerCase();
             const col1 = String(row.c[1]?.v || '').trim();
 
@@ -1211,7 +1320,7 @@
       }
     }
 
-    // ================= 2. BANNER QUE ABARCA TODA LA LÍNEA =================
+    // ================= 2. BANNER DE BARINAS TV =================
     async function cargarBannerDesdeSheet() {
       try {
         const response = await fetch(GVIZ_BANNER_URL);
@@ -1422,7 +1531,7 @@
       }
     }
 
-    // ================= 4. NOTICIAS VARYNA (ORDENADO + BUSCADOR + VISOR PDF) =================
+    // ================= 4. NOTICIAS VARYNA (CON VISOR DE PDF INCORPORADO) =================
     async function cargarNoticiasVarynaDesdeSheet() {
       try {
         const response = await fetch(GVIZ_VARYNA_URL);
@@ -1464,7 +1573,6 @@
           const imagenRaw = String(cells[colImagen]?.v ?? '').trim();
           let pdfRaw = String(cells[colPDF]?.v ?? '').trim();
 
-          // Si en alguna celda se colocó directamente el enlace a la carpeta o archivo
           if (!pdfRaw) {
             cells.forEach(c => {
               const val = String(c?.v || '').trim();
@@ -1477,16 +1585,21 @@
           if (titulo || desc || pdfRaw) {
             listaVaryna.push({
               titulo: titulo || 'Edición Digital Noticias Varyna',
-              desc: desc || 'Edición oficial disponible para lectura en formato PDF.',
+              desc: desc || 'Edición oficial completa disponible para lectura en PDF.',
               imagen: procesarUrlImagen(imagenRaw) || imgPlaceholder,
-              pdf: pdfRaw || 'https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing'
+              pdf: pdfRaw
             });
           }
         }
 
-        // ORDEN CRONOLÓGICO: Del más reciente al más antiguo
+        // ORDEN CRONOLÓGICO: De más reciente a más antiguo
         listaVaryna.reverse();
         listaVarynaGlobal = listaVaryna;
+
+        // Carga la primera edición automáticamente en el lector de la web
+        if (listaVarynaGlobal.length > 0 && listaVarynaGlobal[0].pdf) {
+          seleccionarPdfEnPagina(listaVarynaGlobal[0].pdf, listaVarynaGlobal[0].titulo, false);
+        }
 
         renderizarNoticiasVaryna(listaVarynaGlobal);
         actualizarContadorVaryna(listaVarynaGlobal.length, true);
@@ -1498,6 +1611,7 @@
       }
     }
 
+    // Renderiza las tarjetas seleccionables
     function renderizarNoticiasVaryna(items) {
       const container = document.getElementById('gridNoticiasVaryna');
       if (!items || items.length === 0) {
@@ -1506,10 +1620,10 @@
       }
 
       container.innerHTML = items.map(item => {
-        const enlacePDF = item.pdf || 'https://drive.google.com/drive/folders/1MvrxuleV2dt9tmD_TXstLUsFbBAp1blh?usp=sharing';
+        const enlacePDF = item.pdf || '';
 
         return `
-          <article class="news-card clickable" onclick="abrirVisorPDF('${enlacePDF.replace(/'/g, "\\'")}', '${item.titulo.replace(/'/g, "\\'")}')">
+          <article class="news-card clickable" onclick="seleccionarPdfEnPagina('${enlacePDF.replace(/'/g, "\\'")}', '${item.titulo.replace(/'/g, "\\'")}', true)">
             <div class="news-header">
               <span class="news-tag pdf-badge">Edición Digital PDF</span>
               <h3 class="news-title">${item.titulo}</h3>
@@ -1520,9 +1634,9 @@
               <img src="${item.imagen}" class="news-bg-img" alt="${item.titulo}" loading="lazy" onerror="this.src='${imgPlaceholder}';">
               <div class="news-body-overlay">
                 <p class="news-body-text">${item.desc}</p>
-                <button class="btn-pdf-action">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                  Leer Edición PDF
+                <button class="btn-read-pdf-card">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                  Leer en esta página
                 </button>
               </div>
             </div>
@@ -1531,7 +1645,52 @@
       }).join('');
     }
 
-    // Lógica del buscador en tiempo real
+    // CAMBIA EL PDF MOSTRADO DIRECTAMENTE EN LA PÁGINA WEB
+    function seleccionarPdfEnPagina(urlRaw, titulo, hacerScroll) {
+      if (!urlRaw) return;
+      const urlEmbed = convertirEnlaceParaVisorWeb(urlRaw);
+      urlActualPdfEnPagina = urlRaw;
+
+      const iframe = document.getElementById('pdfIframeEnPagina');
+      const tituloElem = document.getElementById('visorPdfTituloEnPagina');
+      const btnDrive = document.getElementById('btnAbrirEnPestana');
+
+      if (iframe) iframe.src = urlEmbed;
+      if (tituloElem) tituloElem.textContent = titulo || 'Edición Digital - Noticias Varyna';
+      if (btnDrive) btnDrive.href = urlRaw;
+
+      // Si el usuario hizo clic en una tarjeta, se desplaza suavemente hacia el visor
+      if (hacerScroll) {
+        const section = document.getElementById('visorPdfSection');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+
+    // Maximizar el PDF que se está leyendo a toda la pantalla
+    function maximizarPdfModal() {
+      if (!urlActualPdfEnPagina) return;
+      const urlEmbed = convertirEnlaceParaVisorWeb(urlActualPdfEnPagina);
+      const titulo = document.getElementById('visorPdfTituloEnPagina').textContent;
+
+      document.getElementById('pdfModalTitulo').textContent = titulo;
+      document.getElementById('pdfIframeModal').src = urlEmbed;
+      document.getElementById('modalVisorPDF').classList.add('active');
+    }
+
+    function cerrarVisorPDF() {
+      document.getElementById('modalVisorPDF').classList.remove('active');
+      document.getElementById('pdfIframeModal').src = '';
+    }
+
+    function cerrarVisorPDFSiFondo(e) {
+      if (e.target.id === 'modalVisorPDF') {
+        cerrarVisorPDF();
+      }
+    }
+
+    // Buscador en tiempo real de Noticias Varyna
     function filtrarNoticiasVaryna() {
       const input = document.getElementById('inputBuscarVaryna');
       const btnClear = document.getElementById('btnClearVaryna');
@@ -1570,42 +1729,6 @@
         info.textContent = `Mostrando ${cantidad} ediciones (más recientes primero)`;
       } else {
         info.textContent = `${cantidad} edición(es) encontrada(s)`;
-      }
-    }
-
-    // ================= VISOR DE PDF EN LÍNEA =================
-    function abrirVisorPDF(urlRaw, titulo) {
-      if (!urlRaw) return;
-      let url = urlRaw.trim();
-
-      // Si es una carpeta de Drive completa
-      const folderMatch = url.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
-      if (folderMatch && folderMatch[1]) {
-        url = `https://drive.google.com/embeddedfolderview?id=${folderMatch[1]}#grid`;
-      } else {
-        // Si es un archivo individual de Drive
-        const fileMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
-        if (fileMatch && fileMatch[1]) {
-          url = `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
-        } else if (!url.includes('docs.google.com/viewer') && !url.includes('drive.google.com')) {
-          url = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-        }
-      }
-
-      document.getElementById('pdfModalTitulo').textContent = titulo || 'Edición Digital - Noticias Varyna';
-      document.getElementById('pdfModalExterno').href = urlRaw;
-      document.getElementById('pdfIframe').src = url;
-      document.getElementById('modalVisorPDF').classList.add('active');
-    }
-
-    function cerrarVisorPDF() {
-      document.getElementById('modalVisorPDF').classList.remove('active');
-      document.getElementById('pdfIframe').src = '';
-    }
-
-    function cerrarVisorPDFSiFondo(e) {
-      if (e.target.id === 'modalVisorPDF') {
-        cerrarVisorPDF();
       }
     }
 
