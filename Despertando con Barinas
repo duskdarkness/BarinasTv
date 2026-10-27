@@ -1,0 +1,72 @@
+import os
+import random
+import datetime
+import xml.etree.ElementTree as ET
+
+# 1. Configuración de rutas
+RUTA_SENTIR_LLANERO = r"D:\BASE DE DATOS 2022\Sentir Llanero"
+CARPETA_DESTINO = r"D:\Luis\1 Programacion diaria\Programacion sentir llanero"
+
+# Obtener la fecha actual en formato Día-Mes-Año (Ej: 27-10-2026)
+FECHA_HOY = datetime.datetime.now().strftime("%d-%m-%Y")
+
+# Nombre del archivo con la fecha del día
+NOMBRE_ARCHIVO = f"despertando con barinas {FECHA_HOY}.xml"
+ARCHIVO_SALIDA = os.path.join(CARPETA_DESTINO, NOMBRE_ARCHIVO)
+
+DURACION_OBJETIVO_SEGUNDOS = 115 * 60  # 115 minutos (06:00 AM a 07:55 AM)
+
+def generar_xml_playout():
+    # Crear la carpeta de destino si no existe
+    if not os.path.exists(CARPETA_DESTINO):
+        os.makedirs(CARPETA_DESTINO)
+
+    # 2. Recolectar audios en la carpeta y sus subcarpetas
+    canciones = []
+    for raiz, _, archivos in os.walk(RUTA_SENTIR_LLANERO):
+        for archivo in archivos:
+            if archivo.lower().endswith(('.mp3', '.wav', '.mpg', '.mp4', '.aac')):
+                canciones.append(os.path.join(raiz, archivo))
+
+    if not canciones:
+        print("No se encontraron archivos de audio en la ruta especificada.")
+        return
+
+    # 3. Mezclar aleatoriamente las canciones
+    random.shuffle(canciones)
+
+    # 4. Estructurar el XML para Insta Playout
+    root = ET.Element('m_config', path=ARCHIVO_SALIDA)
+    ET.SubElement(root, 'video')
+    ET.SubElement(root, 'audio', track_split='')
+
+    tiempo_acumulado = 0
+    duracion_estimada = 210.0  # 3.5 minutos en promedio por tema
+
+    for item in canciones:
+        if tiempo_acumulado + duracion_estimada > DURACION_OBJETIVO_SEGUNDOS:
+            break
+
+        nodo_file = ET.SubElement(root, 'file', {
+            'in': '0.0',
+            'path': item,
+            'duration': str(duracion_estimada),
+            'loop': 'false'
+        })
+        
+        ET.SubElement(nodo_file, 'video', width='1280', height='720', rate='29.97003', aspect_ratio='16:9')
+        ET.SubElement(nodo_file, 'audio', channels='2', rate='48000', bits='16')
+
+        tiempo_acumulado += duracion_estimada
+
+    # 5. Guardar el archivo XML
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="\t", level=0)
+    tree.write(ARCHIVO_SALIDA, encoding='utf-8', xml_declaration=False)
+    
+    print(f"¡Programación de hoy lista!")
+    print(f"Archivo generado: {NOMBRE_ARCHIVO}")
+    print(f"Ruta completa: {ARCHIVO_SALIDA}")
+
+if __name__ == "__main__":
+    generar_xml_playout()
