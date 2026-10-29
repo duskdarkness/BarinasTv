@@ -19,6 +19,12 @@ INTENTOS_MAXIMOS = 3
 def calcular_hash(texto):
     return hashlib.sha256(texto.strip().encode('utf-8')).hexdigest()
 
+def limpiar_ruta(texto):
+    """Elimina comillas accidentales, espacios y caracteres extra."""
+    if not texto:
+        return ""
+    return texto.strip().strip('"').strip("'").strip()
+
 # ==============================================================================
 # RUTAS GLOBALES Y ARCHIVOS
 # ==============================================================================
@@ -30,7 +36,7 @@ def obtener_fecha_hoy():
     return datetime.datetime.now().strftime("%d-%m-%Y")
 
 # ==============================================================================
-# PLANTILLAS POR DEFECTO (LOS 5 PROGRAMAS ORIGINALES)
+# PLANTILLAS POR DEFECTO
 # ==============================================================================
 def obtener_programas_por_defecto():
     logo = r"\\aire2\BASE DE DATOS 2022\ESCUDERIA 2022\ESCUDERIA\BTV LOGO MUSICALIZADO 2020\BTV LOGO MUSICALIZADO 2020.mpg"
@@ -193,7 +199,7 @@ def obtener_programas_por_defecto():
     ]
 
 # ==============================================================================
-# CARGA Y GUARDADO DE CONFIGURACIÓN
+# CARGA Y GUARDADO
 # ==============================================================================
 def cargar_programas():
     if os.path.exists(ARCHIVO_CONFIG):
@@ -230,22 +236,24 @@ def guardar_registro(ejecutados):
         print(f"Error al guardar registro: {e}")
 
 # ==============================================================================
-# MOTOR UNIVERSAL DE GENERACIÓN XML (IPO)
+# MOTOR UNIVERSAL XML (IPO)
 # ==============================================================================
 def recolectar_archivos(ruta_carpeta):
+    ruta_limpia = limpiar_ruta(ruta_carpeta)
     exts = ('.mp4', '.mpg', '.avi', '.mkv', '.mov', '.mp3', '.wav', '.aac')
     archivos = []
-    if os.path.exists(ruta_carpeta):
-        for raiz, _, files in os.walk(ruta_carpeta):
+    if os.path.exists(ruta_limpia):
+        for raiz, _, files in os.walk(ruta_limpia):
             for file in files:
                 if file.lower().endswith(exts):
                     archivos.append(os.path.join(raiz, file))
     return archivos
 
 def crear_nodo_file(root, path_archivo, duracion):
+    ruta_real = limpiar_ruta(path_archivo)
     nodo = ET.SubElement(root, 'file', {
         'in': '0.0',
-        'path': path_archivo,
+        'path': ruta_real,
         'duration': str(duracion),
         'loop': 'false'
     })
@@ -253,7 +261,6 @@ def crear_nodo_file(root, path_archivo, duracion):
     ET.SubElement(nodo, 'audio', channels='2', rate='48000', bits='16')
 
 def ejecutar_motor_universal(prog):
-    """Procesa cualquier programa leyendo su escaleta paso a paso."""
     if not os.path.exists(CARPETA_DESTINO):
         os.makedirs(CARPETA_DESTINO)
 
@@ -262,7 +269,6 @@ def ejecutar_motor_universal(prog):
     ET.SubElement(root, 'video')
     ET.SubElement(root, 'audio', track_split='')
 
-    # Cache de carpetas para no escanear la red 2 veces en el mismo programa
     cache_carpetas = {}
 
     for paso in prog["escaleta"]:
@@ -271,8 +277,28 @@ def ejecutar_motor_universal(prog):
         if tipo == "fijo":
             crear_nodo_file(root, paso["ruta"], paso["duracion"])
 
+        elif tipo == "azar":
+            carpeta = limpiar_ruta(paso["carpeta"])
+            if carpeta not in cache_carpetas:
+                encontrados = recolectar_archivos(carpeta)
+                if not encontrados:
+                    raise Exception(f"No hay archivos en la carpeta:\n{carpeta}")
+                random.shuffle(encontrados)
+                cache_carpetas[carpeta] = {"lista": encontrados, "iter": iter(encontrados)}
+            
+            paquete = cache_carpetas[carpeta]
+            try:
+                archivo_azar = next(paquete["iter"])
+            except StopIteration:
+                random.shuffle(paquete["lista"])
+                paquete["iter"] = iter(paquete["lista"])
+                archivo_azar = next(paquete["iter"])
+
+            duracion_estimada = paso.get("duracion", 1800.0)
+            crear_nodo_file(root, archivo_azar, duracion_estimada)
+
         elif tipo == "musica":
-            carpeta = paso["carpeta"]
+            carpeta = limpiar_ruta(paso["carpeta"])
             minutos = paso["minutos"]
             segundos_objetivo = minutos * 60
 
@@ -285,7 +311,7 @@ def ejecutar_motor_universal(prog):
 
             paquete = cache_carpetas[carpeta]
             acumulado = 0
-            duracion_estimada = 210.0  # 3.5 minutos
+            duracion_cancion = 210.0
 
             while acumulado < segundos_objetivo:
                 try:
@@ -295,22 +321,21 @@ def ejecutar_motor_universal(prog):
                     paquete["iter"] = iter(paquete["lista"])
                     archivo = next(paquete["iter"])
 
-                crear_nodo_file(root, archivo, duracion_estimada)
-                acumulado += duracion_estimada
+                crear_nodo_file(root, archivo, duracion_cancion)
+                acumulado += duracion_cancion
 
-    # Guardar en CP1252 para conservar tildes y caracteres especiales
     tree = ET.ElementTree(root)
     ET.indent(tree, space="\t", level=0)
     tree.write(archivo_salida, encoding='cp1252', xml_declaration=False)
 
 # ==============================================================================
-# VENTANA DEL EDITOR DE ESCALETA
+# EDITOR DE ESCALETAS (CON DUPLICADOR)
 # ==============================================================================
 class VentanaEditorEscaleta(tk.Toplevel):
     def __init__(self, parent, prog, callback_guardar):
         super().__init__(parent)
         self.title(f"Editor de Escaleta - {prog['nombre']}")
-        self.geometry("750x550")
+        self.geometry("860x560")
         self.configure(bg="#2c3e50")
         self.prog = prog
         self.callback_guardar = callback_guardar
@@ -319,17 +344,16 @@ class VentanaEditorEscaleta(tk.Toplevel):
         lbl = tk.Label(self, text=f"Escaleta de: {prog['nombre']}", font=("Segoe UI", 13, "bold"), fg="#ecf0f1", bg="#2c3e50")
         lbl.pack(pady=10)
 
-        # Contenedor de lista
         frame_list = tk.Frame(self)
-        frame_list.pack(fill="both", expand=True, padx=20, pady=5)
+        frame_list.pack(fill="both", expand=True, padx=15, pady=5)
 
         self.tree = ttk.Treeview(frame_list, columns=("tipo", "nombre", "detalle"), show="headings", selectmode="browse")
         self.tree.heading("tipo", text="Tipo")
         self.tree.heading("nombre", text="Elemento")
         self.tree.heading("detalle", text="Duración / Carpeta")
-        self.tree.column("tipo", width=80, anchor="center")
-        self.tree.column("nombre", width=220)
-        self.tree.column("detalle", width=400)
+        self.tree.column("tipo", width=110, anchor="center")
+        self.tree.column("nombre", width=200)
+        self.tree.column("detalle", width=500)
         
         scroll = ttk.Scrollbar(frame_list, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scroll.set)
@@ -337,17 +361,18 @@ class VentanaEditorEscaleta(tk.Toplevel):
         self.tree.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
 
-        # Botonera de acciones
         frame_btns = tk.Frame(self, bg="#2c3e50")
-        frame_btns.pack(fill="x", padx=20, pady=10)
+        frame_btns.pack(fill="x", padx=15, pady=10)
 
-        tk.Button(frame_btns, text="⬆ Subir", bg="#34495e", fg="white", relief="flat", command=self.subir).pack(side="left", padx=3)
-        tk.Button(frame_btns, text="⬇ Bajar", bg="#34495e", fg="white", relief="flat", command=self.bajar).pack(side="left", padx=3)
-        tk.Button(frame_btns, text="➕ Agregar Cortinilla", bg="#2980b9", fg="white", relief="flat", command=self.agregar_fijo).pack(side="left", padx=6)
-        tk.Button(frame_btns, text="🎵 Agregar Bloque Música", bg="#8e44ad", fg="white", relief="flat", command=self.agregar_musica).pack(side="left", padx=6)
-        tk.Button(frame_btns, text="🗑 Quitar", bg="#c0392b", fg="white", relief="flat", command=self.eliminar).pack(side="left", padx=6)
+        tk.Button(frame_btns, text="⬆ Subir", bg="#34495e", fg="white", relief="flat", command=self.subir).pack(side="left", padx=2)
+        tk.Button(frame_btns, text="⬇ Bajar", bg="#34495e", fg="white", relief="flat", command=self.bajar).pack(side="left", padx=2)
+        tk.Button(frame_btns, text="📋 Duplicar", bg="#d35400", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.duplicar).pack(side="left", padx=5)
+        tk.Button(frame_btns, text="➕ Cortinilla", bg="#2980b9", fg="white", relief="flat", command=self.agregar_fijo).pack(side="left", padx=3)
+        tk.Button(frame_btns, text="🎲 1 Video al Azar", bg="#16a085", fg="white", relief="flat", command=self.agregar_azar).pack(side="left", padx=3)
+        tk.Button(frame_btns, text="🎵 Bloque Musical", bg="#8e44ad", fg="white", relief="flat", command=self.agregar_musica).pack(side="left", padx=3)
+        tk.Button(frame_btns, text="🗑 Quitar", bg="#c0392b", fg="white", relief="flat", command=self.eliminar).pack(side="left", padx=3)
         
-        tk.Button(frame_btns, text="💾 GUARDAR CAMBIOS", bg="#27ae60", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.guardar).pack(side="right", padx=3)
+        tk.Button(frame_btns, text="💾 GUARDAR", bg="#27ae60", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.guardar).pack(side="right", padx=2)
 
         self.recargar_tabla()
 
@@ -355,9 +380,31 @@ class VentanaEditorEscaleta(tk.Toplevel):
         for item in self.tree.get_children():
             self.tree.delete(item)
         for i, paso in enumerate(self.escaleta):
-            tipo = "Cortinilla" if paso["tipo"] == "fijo" else "Música"
-            detalle = f"{paso['duracion']} seg  |  {paso['ruta']}" if paso["tipo"] == "fijo" else f"{paso['minutos']} min  |  {paso['carpeta']}"
-            self.tree.insert("", "end", iid=str(i), values=(tipo, paso["nombre"], detalle))
+            t = paso.get("tipo")
+            if t == "fijo":
+                tipo_str = "Cortinilla"
+                detalle = f"{paso['duracion']} seg | {limpiar_ruta(paso['ruta'])}"
+            elif t == "azar":
+                tipo_str = "1 Video Azar"
+                detalle = f"Carpeta: {limpiar_ruta(paso['carpeta'])}"
+            else:
+                tipo_str = "Bloque Música"
+                detalle = f"{paso['minutos']} min | {limpiar_ruta(paso['carpeta'])}"
+
+            self.tree.insert("", "end", iid=str(i), values=(tipo_str, paso["nombre"], detalle))
+
+    def duplicar(self):
+        """Clona el elemento seleccionado exactamente debajo."""
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Atención", "Selecciona un elemento para duplicar.", parent=self)
+            return
+        idx = int(sel[0])
+        elemento_copiado = dict(self.escaleta[idx])
+        self.escaleta.insert(idx + 1, elemento_copiado)
+        self.recargar_tabla()
+        self.tree.selection_set(str(idx + 1))
+        self.tree.see(str(idx + 1))
 
     def subir(self):
         sel = self.tree.selection()
@@ -385,38 +432,46 @@ class VentanaEditorEscaleta(tk.Toplevel):
         self.recargar_tabla()
 
     def agregar_fijo(self):
-        nom = simpledialog.askstring("Cortinilla", "Nombre identificador (ej: Ya Regresamos):", parent=self)
+        nom = simpledialog.askstring("Cortinilla", "Nombre (ej: Ya Regresamos):", parent=self)
         if not nom: return
-        ruta = simpledialog.askstring("Ruta de Red", "Ruta completa del video en la red:", parent=self)
+        ruta = simpledialog.askstring("Ruta", "Ruta de red del archivo:", parent=self)
         if not ruta: return
-        dur = simpledialog.askfloat("Duración", "Duración exacta en segundos (ej: 15.11):", parent=self)
+        dur = simpledialog.askfloat("Duración", "Duración exacta en segundos:", parent=self)
         if dur is None: return
-        self.escaleta.append({"tipo": "fijo", "nombre": nom, "ruta": ruta, "duracion": dur})
+        self.escaleta.append({"tipo": "fijo", "nombre": nom, "ruta": limpiar_ruta(ruta), "duracion": dur})
+        self.recargar_tabla()
+
+    def agregar_azar(self):
+        nom = simpledialog.askstring("Video al Azar", "Nombre (ej: Documental del Día):", parent=self)
+        if not nom: return
+        carpeta = simpledialog.askstring("Carpeta", "Carpeta de donde tomará 1 video al azar:", parent=self)
+        if not carpeta: return
+        self.escaleta.append({"tipo": "azar", "nombre": nom, "carpeta": limpiar_ruta(carpeta), "duracion": 1800.0})
         self.recargar_tabla()
 
     def agregar_musica(self):
-        nom = simpledialog.askstring("Bloque", "Nombre del bloque (ej: Bloque 1):", parent=self)
+        nom = simpledialog.askstring("Bloque", "Nombre (ej: Bloque 1):", parent=self)
         if not nom: return
-        carpeta = simpledialog.askstring("Carpeta de Red", "Carpeta con las canciones o videos:", parent=self)
+        carpeta = simpledialog.askstring("Carpeta", "Carpeta con las canciones:", parent=self)
         if not carpeta: return
-        minutos = simpledialog.askfloat("Minutos", "Duración objetivo en minutos (ej: 21):", parent=self)
+        minutos = simpledialog.askfloat("Minutos", "Minutos a rellenar (ej: 21):", parent=self)
         if minutos is None: return
-        self.escaleta.append({"tipo": "musica", "nombre": nom, "carpeta": carpeta, "minutos": minutos})
+        self.escaleta.append({"tipo": "musica", "nombre": nom, "carpeta": limpiar_ruta(carpeta), "minutos": minutos})
         self.recargar_tabla()
 
     def guardar(self):
         self.prog["escaleta"] = self.escaleta
         self.callback_guardar()
-        messagebox.showinfo("Éxito", "Escaleta actualizada correctamente.", parent=self)
+        messagebox.showinfo("Éxito", "Escaleta guardada.", parent=self)
         self.destroy()
 
 # ==============================================================================
-# PANEL DE ADMINISTRACIÓN DE PROGRAMAS
+# ADMINISTRADOR GENERAL
 # ==============================================================================
 class VentanaAdminProgramas(tk.Toplevel):
     def __init__(self, parent, lista_programas, callback_actualizar_ui):
         super().__init__(parent)
-        self.title("Administrador de Categorías y Programas")
+        self.title("Administrador de Categorías")
         self.geometry("600x480")
         self.configure(bg="#2c3e50")
         self.programas = lista_programas
@@ -450,18 +505,13 @@ class VentanaAdminProgramas(tk.Toplevel):
             self.listbox.insert(tk.END, f"  {p['nombre']} ({len(p['escaleta'])} pasos)")
 
     def nuevo_programa(self):
-        nom = simpledialog.askstring("Nuevo", "Nombre del Programa (ej: Baladas del Recuerdo):", parent=self)
+        nom = simpledialog.askstring("Nuevo", "Nombre del Programa (ej: Documentales):", parent=self)
         if not nom: return
-        prefijo = simpledialog.askstring("Prefijo", "Prefijo del archivo XML (ej: 6.-baladas):", parent=self)
+        prefijo = simpledialog.askstring("Prefijo", "Prefijo del archivo XML (ej: 6.-documentales):", parent=self)
         if not prefijo: return
 
         nuevo_id = f"prog_{len(self.programas) + 1}"
-        nuevo_item = {
-            "id": nuevo_id,
-            "nombre": nom,
-            "prefijo": prefijo,
-            "escaleta": []
-        }
+        nuevo_item = {"id": nuevo_id, "nombre": nom, "prefijo": prefijo, "escaleta": []}
         self.programas.append(nuevo_item)
         guardar_programas(self.programas)
         self.refrescar_lista()
@@ -470,9 +520,7 @@ class VentanaAdminProgramas(tk.Toplevel):
 
     def abrir_escaleta(self):
         sel = self.listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Atención", "Selecciona un programa para editar.", parent=self)
-            return
+        if not sel: return
         prog = self.programas[sel[0]]
         VentanaEditorEscaleta(self, prog, lambda: guardar_programas(self.programas))
 
@@ -481,14 +529,14 @@ class VentanaAdminProgramas(tk.Toplevel):
         if not sel: return
         idx = sel[0]
         prog = self.programas[idx]
-        if messagebox.askyesno("Confirmar", f"¿Estás seguro de eliminar '{prog['nombre']}'?", parent=self):
+        if messagebox.askyesno("Confirmar", f"¿Eliminar '{prog['nombre']}'?", parent=self):
             del self.programas[idx]
             guardar_programas(self.programas)
             self.refrescar_lista()
             self.callback_actualizar_ui()
 
     def restaurar_fabrica(self):
-        if messagebox.askyesno("Restaurar", "¿Deseas restablecer los 5 programas originales de fábrica?\n\n(Se perderán las modificaciones)", parent=self):
+        if messagebox.askyesno("Restaurar", "¿Restaurar los 5 programas de fábrica?", parent=self):
             self.programas.clear()
             self.programas.extend(obtener_programas_por_defecto())
             guardar_programas(self.programas)
@@ -496,7 +544,7 @@ class VentanaAdminProgramas(tk.Toplevel):
             self.callback_actualizar_ui()
 
 # ==============================================================================
-# APLICACIÓN PRINCIPAL (PANEL DE CONTROL)
+# PANEL PRINCIPAL
 # ==============================================================================
 programas_activos = cargar_programas()
 registro_hoy = cargar_registro()
@@ -526,11 +574,11 @@ def solicitar_ejecucion(prog, forzar=False):
 def ejecutar_todos():
     pendientes = [p for p in programas_activos if p["id"] not in registro_hoy]
     if len(pendientes) < len(programas_activos):
-        resp = messagebox.askyesnocancel("Ejecutar Todo", "¿Deseas ejecutar SOLO los programas pendientes?\n\n[SÍ] = Solo pendientes\n[NO] = Todos de nuevo")
+        resp = messagebox.askyesnocancel("Ejecutar Todo", "¿Deseas ejecutar SOLO los programas pendientes?\n\n[SÍ] = Solo pendientes\n[NO] = Todos")
         if resp is None: return
         lista = pendientes if resp else programas_activos
     else:
-        if not messagebox.askyesno("Confirmar", "¿Iniciar la generación de TODOS los programas?"): return
+        if not messagebox.askyesno("Confirmar", "¿Iniciar la generación de TODOS?"): return
         lista = programas_activos
 
     def serie():
@@ -622,7 +670,7 @@ def mostrar_login():
     tk.Button(win_login, text="Ingresar", font=("Segoe UI", 10, "bold"), bg="#27ae60", fg="white", relief="flat", cursor="hand2", command=validar_login).pack(fill="x", padx=45, pady=10)
 
 # ==============================================================================
-# CONSTRUCCIÓN DE LA VENTANA PRINCIPAL
+# VENTANA PRINCIPAL
 # ==============================================================================
 ventana = tk.Tk()
 ventana.title("Panel Playout - Generador de Contenido")
@@ -631,7 +679,6 @@ ventana.resizable(False, False)
 ventana.configure(bg="#f4f6f9")
 ventana.withdraw()
 
-# Barra superior
 frame_top = tk.Frame(ventana, bg="#f4f6f9")
 frame_top.pack(fill="x", padx=20, pady=(15, 0))
 
@@ -652,7 +699,6 @@ btn_all.pack(fill="x", padx=25, pady=(0, 10))
 
 tk.Frame(ventana, height=2, bg="#dcdde1").pack(fill="x", padx=25, pady=(0, 10))
 
-# Área con scroll para botones dinámicos
 canvas = tk.Canvas(ventana, bg="#f4f6f9", highlightthickness=0)
 scrollbar = ttk.Scrollbar(ventana, orient="vertical", command=canvas.yview)
 frame_scroll = tk.Frame(canvas, bg="#f4f6f9")
@@ -670,7 +716,6 @@ lbl_estado.pack(side="bottom", pady=6)
 
 tk.Button(ventana, text="Cerrar Aplicación", font=("Segoe UI", 9), bg="#bdc3c7", fg="#2c3e50", relief="flat", cursor="hand2", command=ventana.destroy).pack(side="bottom", pady=4)
 
-# Inicializar
 reconstruir_interfaz_botones()
 mostrar_login()
 ventana.mainloop()
