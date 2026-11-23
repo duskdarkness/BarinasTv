@@ -4,12 +4,12 @@ import json
 import random
 import hashlib
 import datetime
+import calendar
 import threading
 import subprocess
 import urllib.request
 import urllib.parse
 import webbrowser
-import shutil
 import tkinter as tk
 from tkinter import messagebox, simpledialog, filedialog, ttk
 import xml.etree.ElementTree as ET
@@ -54,7 +54,7 @@ datos_remotos = {
 }
 
 # ==============================================================================
-# UTILIDADES DE RUTAS, HUELLA HARDWARE Y CRIPTOGRAFÍA
+# UTILIDADES DE RUTAS, FECHAS, HUELLA HARDWARE Y CRIPTOGRAFÍA
 # ==============================================================================
 def calcular_hash(texto):
     return hashlib.sha256(texto.strip().encode('utf-8')).hexdigest()
@@ -89,7 +89,8 @@ def obtener_hwid():
     try:
         cmd = 'powershell -command "(Get-CimInstance -Class Win32_ComputerSystemProduct).UUID"'
         uuid = subprocess.check_output(cmd, shell=True).decode().strip()
-        if uuid: return uuid
+        if uuid:
+            return uuid
     except Exception:
         pass
     import platform
@@ -114,6 +115,21 @@ def calcular_dias_desde_fecha(vence_str):
         return max(0, dias)
     except Exception:
         return 365
+
+def parsear_fecha_usuario(texto):
+    """Convierte DD-MM-YYYY, DD/MM/YYYY o YYYY-MM-DD a datetime.date."""
+    t = str(texto).strip()
+    for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            return datetime.datetime.strptime(t, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+def ultimo_dia_del_mes(anio, mes):
+    """Retorna el último día (datetime.date) de un mes/año dado."""
+    _, num_dias = calendar.monthrange(anio, mes)
+    return datetime.date(anio, mes, num_dias)
 
 # ==============================================================================
 # CONFIGURACIÓN GENERAL (CARPETA DE SALIDA XML)
@@ -279,9 +295,12 @@ def cargar_programas():
                 programas = json.load(f)
                 for prog in programas:
                     for paso in prog.get("escaleta", []):
-                        if "ruta" in paso: paso["ruta"] = limpiar_ruta(paso["ruta"])
-                        if "carpeta" in paso: paso["carpeta"] = limpiar_ruta(paso["carpeta"])
-                if programas: return programas
+                        if "ruta" in paso:
+                            paso["ruta"] = limpiar_ruta(paso["ruta"])
+                        if "carpeta" in paso:
+                            paso["carpeta"] = limpiar_ruta(paso["carpeta"])
+                if programas:
+                    return programas
         except Exception:
             pass
     programas = obtener_programas_por_defecto()
@@ -291,8 +310,10 @@ def cargar_programas():
 def guardar_programas(programas):
     for prog in programas:
         for paso in prog.get("escaleta", []):
-            if "ruta" in paso: paso["ruta"] = limpiar_ruta(paso["ruta"])
-            if "carpeta" in paso: paso["carpeta"] = limpiar_ruta(paso["carpeta"])
+            if "ruta" in paso:
+                paso["ruta"] = limpiar_ruta(paso["ruta"])
+            if "carpeta" in paso:
+                paso["carpeta"] = limpiar_ruta(paso["carpeta"])
 
     with open(ARCHIVO_CONFIG_PROGRAMAS, "w", encoding="utf-8") as f:
         json.dump(programas, f, indent=4, ensure_ascii=False)
@@ -319,12 +340,18 @@ def guardar_registro(ejecutados):
 # ==============================================================================
 # SISTEMA DE ACTUALIZACIÓN REMOTA AUTOMÁTICA
 # ==============================================================================
+def version_a_tupla(ver_str):
+    try:
+        return tuple(int(x) for x in str(ver_str).strip().split("."))
+    except Exception:
+        return (0,)
+
 def comprobar_actualizacion_disponible(parent):
     v_remota = datos_remotos.get("version_remota", VERSION_LOCAL)
     url_descarga = datos_remotos.get("url_descarga", "")
     notas = datos_remotos.get("notas_actualizacion", "Mejoras generales de estabilidad.")
 
-    if v_remota > VERSION_LOCAL and url_descarga.startswith("http"):
+    if version_a_tupla(v_remota) > version_a_tupla(VERSION_LOCAL) and url_descarga.startswith("http"):
         msg = (
             f"¡Nueva versión disponible: v{v_remota}!\n"
             f"Versión actual: v{VERSION_LOCAL}\n\n"
@@ -363,8 +390,7 @@ del "%~f0"
             subprocess.Popen([bat_reemplazo], shell=True)
             os._exit(0)
         except Exception as e:
-            messagebox.showerror("Error", f"Fallo al actualizar:\n{e}")
-            win_upd.destroy()
+            ventana.after(0, lambda err=e: (messagebox.showerror("Error", f"Fallo al actualizar:\n{err}"), win_upd.destroy()))
 
     threading.Thread(target=tarea_descarga, daemon=True).start()
 
@@ -393,13 +419,22 @@ def crear_nodo_file(root, path_archivo, duracion):
     ET.SubElement(nodo, 'video', width='1280', height='720', rate='29.97003', aspect_ratio='16:9')
     ET.SubElement(nodo, 'audio', channels='2', rate='48000', bits='16')
 
-def ejecutar_motor_universal(prog):
+def ruta_xml_programa(prog, fecha_objetivo=None):
+    if fecha_objetivo is None:
+        fecha_objetivo = datetime.date.today()
+    carpeta_salida = limpiar_ruta(config_general.get("carpeta_salida", ""))
+    fecha_str = fecha_objetivo.strftime("%d-%m-%Y")
+    return limpiar_ruta(os.path.join(carpeta_salida, f"{prog['prefijo']} {fecha_str}.xml"))
+
+def ejecutar_motor_universal(prog, fecha_objetivo=None):
+    if fecha_objetivo is None:
+        fecha_objetivo = datetime.date.today()
+
     carpeta_salida = limpiar_ruta(config_general.get("carpeta_salida", ""))
     if not os.path.exists(carpeta_salida):
         os.makedirs(carpeta_salida)
 
-    fecha_hoy = datetime.datetime.now().strftime("%d-%m-%Y")
-    archivo_salida = limpiar_ruta(os.path.join(carpeta_salida, f"{prog['prefijo']} {fecha_hoy}.xml"))
+    archivo_salida = ruta_xml_programa(prog, fecha_objetivo)
     root = ET.Element('m_config', path=archivo_salida)
     ET.SubElement(root, 'video')
     ET.SubElement(root, 'audio', track_split='')
@@ -420,7 +455,7 @@ def ejecutar_motor_universal(prog):
                     raise Exception(f"No hay archivos en la carpeta:\n{carpeta}")
                 random.shuffle(encontrados)
                 cache_carpetas[carpeta] = {"lista": encontrados, "iter": iter(encontrados)}
-            
+
             paquete = cache_carpetas[carpeta]
             try:
                 archivo_azar = next(paquete["iter"])
@@ -462,6 +497,115 @@ def ejecutar_motor_universal(prog):
     tree = ET.ElementTree(root)
     ET.indent(tree, space="\t", level=0)
     tree.write(archivo_salida, encoding='cp1252', xml_declaration=False)
+    return archivo_salida
+
+# ==============================================================================
+# CALENDARIO VISUAL EN TKINTER PURO (SIN DEPENDENCIAS EXTERNAS)
+# ==============================================================================
+class VentanaCalendario(tk.Toplevel):
+    MESES_ES = [
+        "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+    DIAS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+    def __init__(self, parent, fecha_inicial, callback, titulo="Seleccionar Fecha"):
+        super().__init__(parent)
+        self.title(titulo)
+        self.resizable(False, False)
+        self.configure(bg="#2c3e50")
+        self.transient(parent)
+        self.grab_set()
+
+        self.callback = callback
+        self.fecha_sel = fecha_inicial if isinstance(fecha_inicial, datetime.date) else datetime.date.today()
+        self.anio_vista = self.fecha_sel.year
+        self.mes_vista = self.fecha_sel.month
+
+        # Cabecera de navegación
+        frame_nav = tk.Frame(self, bg="#1a252f", pady=8, padx=10)
+        frame_nav.pack(fill="x")
+
+        tk.Button(frame_nav, text="«", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(-12)).pack(side="left", padx=1)
+        tk.Button(frame_nav, text="‹", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(-1)).pack(side="left", padx=1)
+
+        self.lbl_mes_anio = tk.Label(frame_nav, text="", font=("Segoe UI", 11, "bold"), fg="#f1c40f", bg="#1a252f", width=18)
+        self.lbl_mes_anio.pack(side="left", expand=True)
+
+        tk.Button(frame_nav, text="›", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(1)).pack(side="right", padx=1)
+        tk.Button(frame_nav, text="»", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(12)).pack(side="right", padx=1)
+
+        # Grilla del calendario
+        self.frame_grid = tk.Frame(self, bg="#2c3e50", padx=10, pady=8)
+        self.frame_grid.pack()
+
+        # Pie con botón Hoy
+        frame_pie = tk.Frame(self, bg="#2c3e50", pady=6)
+        frame_pie.pack(fill="x", padx=10)
+        tk.Button(frame_pie, text="Ir a Hoy", font=("Segoe UI", 8, "bold"), bg="#16a085", fg="white", relief="flat", command=self.elegir_hoy).pack(side="left")
+        tk.Button(frame_pie, text="Cancelar", font=("Segoe UI", 8), bg="#7f8c8d", fg="white", relief="flat", command=self.destroy).pack(side="right")
+
+        self.dibujar_mes()
+
+    def cambiar_mes(self, delta_meses):
+        total = self.anio_vista * 12 + (self.mes_vista - 1) + delta_meses
+        self.anio_vista = total // 12
+        self.mes_vista = (total % 12) + 1
+        self.dibujar_mes()
+
+    def elegir_hoy(self):
+        hoy = datetime.date.today()
+        self.callback(hoy)
+        self.destroy()
+
+    def seleccionar_dia(self, fecha_obj):
+        self.callback(fecha_obj)
+        self.destroy()
+
+    def dibujar_mes(self):
+        for w in self.frame_grid.winfo_children():
+            w.destroy()
+
+        self.lbl_mes_anio.config(text=f"{self.MESES_ES[self.mes_vista]} {self.anio_vista}")
+
+        for col, nombre_dia in enumerate(self.DIAS_ES):
+            fg_col = "#e67e22" if col == 6 else "#bdc3c7"
+            tk.Label(self.frame_grid, text=nombre_dia, font=("Segoe UI", 8, "bold"), bg="#2c3e50", fg=fg_col, width=4).grid(row=0, column=col, pady=(0, 4))
+
+        hoy = datetime.date.today()
+        cal = calendar.Calendar(firstweekday=0)
+        semanas = cal.monthdatescalendar(self.anio_vista, self.mes_vista)
+
+        for fila_idx, semana in enumerate(semanas, start=1):
+            for col_idx, fecha_dia in enumerate(semana):
+                es_mes_actual = (fecha_dia.month == self.mes_vista)
+                if fecha_dia == self.fecha_sel:
+                    bg = "#2980b9"
+                    fg = "white"
+                elif fecha_dia == hoy:
+                    bg = "#27ae60"
+                    fg = "white"
+                elif es_mes_actual:
+                    bg = "#34495e"
+                    fg = "white"
+                else:
+                    bg = "#243342"
+                    fg = "#7f8c8d"
+
+                btn = tk.Button(
+                    self.frame_grid,
+                    text=str(fecha_dia.day),
+                    font=("Segoe UI", 9, "bold" if fecha_dia in (hoy, self.fecha_sel) else "normal"),
+                    bg=bg,
+                    fg=fg,
+                    activebackground="#3498db",
+                    activeforeground="white",
+                    relief="flat",
+                    width=4,
+                    cursor="hand2",
+                    command=lambda f=fecha_dia: self.seleccionar_dia(f)
+                )
+                btn.grid(row=fila_idx, column=col_idx, padx=1, pady=1)
 
 # ==============================================================================
 # EDITOR DE ESCALETAS (BUSCADOR WINDOWS + EDICIÓN MANUAL)
@@ -491,7 +635,7 @@ class VentanaEditorEscaleta(tk.Toplevel):
         self.tree.column("tipo", width=120, anchor="center")
         self.tree.column("nombre", width=180)
         self.tree.column("detalle", width=620)
-        
+
         self.tree.bind("<Double-1>", lambda event: self.editar_manual())
 
         scroll = ttk.Scrollbar(frame_list, orient="vertical", command=self.tree.yview)
@@ -505,7 +649,7 @@ class VentanaEditorEscaleta(tk.Toplevel):
         tk.Button(frame_btns, text="⬆ Subir", bg="#34495e", fg="white", relief="flat", command=self.subir).pack(side="left", padx=2)
         tk.Button(frame_btns, text="⬇ Bajar", bg="#34495e", fg="white", relief="flat", command=self.bajar).pack(side="left", padx=2)
         tk.Button(frame_btns, text="📋 Duplicar", bg="#d35400", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.duplicar).pack(side="left", padx=3)
-        
+
         tk.Button(frame_btns, text="✏ Editar Fila", bg="#1f3a52", fg="#f1c40f", font=("Segoe UI", 9, "bold"), relief="groove", command=self.editar_manual).pack(side="left", padx=3)
         tk.Button(frame_btns, text="➕ Cortinilla (Archivo)", bg="#2980b9", fg="white", relief="flat", command=self.agregar_fijo).pack(side="left", padx=2)
         tk.Button(frame_btns, text="🎲 1 Video Azar", bg="#16a085", fg="white", relief="flat", command=self.agregar_azar).pack(side="left", padx=2)
@@ -536,7 +680,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
 
     def agregar_fijo(self):
         nom = simpledialog.askstring("Cortinilla", "Nombre (ej: Ya Regresamos):", parent=self)
-        if not nom: return
+        if not nom:
+            return
         ruta = filedialog.askopenfilename(
             title="Seleccionar Archivo de Cortinilla (Red o Local)",
             filetypes=[("Archivos de video", "*.mp4 *.mpg *.avi *.mkv *.mov *.mp3 *.wav *.wmv"), ("Todos los archivos", "*.*")],
@@ -544,35 +689,42 @@ class VentanaEditorEscaleta(tk.Toplevel):
         )
         if not ruta:
             ruta = simpledialog.askstring("Ruta Manual", "No seleccionaste archivo. ¿Deseas escribirla o pegarla?:", parent=self)
-        if not ruta: return
+        if not ruta:
+            return
 
         dur = simpledialog.askfloat("Duración", "Duración exacta en segundos:", initialvalue=10.0, parent=self)
-        if dur is None: return
+        if dur is None:
+            return
 
         self.escaleta.append({"tipo": "fijo", "nombre": nom, "ruta": limpiar_ruta(ruta), "duracion": dur})
         self.recargar_tabla()
 
     def agregar_azar(self):
         nom = simpledialog.askstring("Video al Azar", "Nombre (ej: Documental del Día):", parent=self)
-        if not nom: return
+        if not nom:
+            return
         carpeta = filedialog.askdirectory(title="Seleccionar Carpeta con Videos al Azar", parent=self)
         if not carpeta:
             carpeta = simpledialog.askstring("Carpeta Manual", "No seleccionaste carpeta. ¿Deseas escribirla o pegarla?:", parent=self)
-        if not carpeta: return
+        if not carpeta:
+            return
 
         self.escaleta.append({"tipo": "azar", "nombre": nom, "carpeta": limpiar_ruta(carpeta), "duracion": 1800.0})
         self.recargar_tabla()
 
     def agregar_musica(self):
         nom = simpledialog.askstring("Bloque", "Nombre (ej: Bloque 1):", parent=self)
-        if not nom: return
+        if not nom:
+            return
         carpeta = filedialog.askdirectory(title="Seleccionar Carpeta para Bloque Musical", parent=self)
         if not carpeta:
             carpeta = simpledialog.askstring("Carpeta Manual", "No seleccionaste carpeta. ¿Deseas escribirla o pegarla?:", parent=self)
-        if not carpeta: return
+        if not carpeta:
+            return
 
         minutos = simpledialog.askfloat("Minutos", "Minutos a rellenar (ej: 21):", initialvalue=21.0, parent=self)
-        if minutos is None: return
+        if minutos is None:
+            return
 
         self.escaleta.append({"tipo": "musica", "nombre": nom, "carpeta": limpiar_ruta(carpeta), "minutos": minutos})
         self.recargar_tabla()
@@ -595,7 +747,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
             f"[CANCELAR] = Dejar sin cambios",
             parent=self
         )
-        if metodo is None: return
+        if metodo is None:
+            return
 
         if tipo == "fijo":
             nueva_ruta = None
@@ -610,10 +763,12 @@ class VentanaEditorEscaleta(tk.Toplevel):
             else:
                 nueva_ruta = simpledialog.askstring("Editar Ruta", f"Modifica la ruta para '{paso['nombre']}':", initialvalue=paso.get("ruta", ""), parent=self)
 
-            if nueva_ruta: paso["ruta"] = limpiar_ruta(nueva_ruta)
+            if nueva_ruta:
+                paso["ruta"] = limpiar_ruta(nueva_ruta)
 
             nueva_dur = simpledialog.askfloat("Editar Duración", "Duración en segundos:", initialvalue=float(paso.get("duracion", 0.0)), parent=self)
-            if nueva_dur is not None: paso["duracion"] = nueva_dur
+            if nueva_dur is not None:
+                paso["duracion"] = nueva_dur
 
         elif tipo in ("musica", "azar"):
             nueva_carpeta = None
@@ -626,17 +781,19 @@ class VentanaEditorEscaleta(tk.Toplevel):
                 )
             else:
                 nueva_carpeta = simpledialog.askstring(
-                    "Editar Carpeta", 
-                    f"Modifica la carpeta para '{paso['nombre']}':\n(Cualquier '/' será convertido a '\\' automáticamente)", 
-                    initialvalue=paso.get("carpeta", ""), 
+                    "Editar Carpeta",
+                    f"Modifica la carpeta para '{paso['nombre']}':\n(Cualquier '/' será convertido a '\\' automáticamente)",
+                    initialvalue=paso.get("carpeta", ""),
                     parent=self
                 )
 
-            if nueva_carpeta: paso["carpeta"] = limpiar_ruta(nueva_carpeta)
+            if nueva_carpeta:
+                paso["carpeta"] = limpiar_ruta(nueva_carpeta)
 
             if tipo == "musica":
                 nuevos_min = simpledialog.askfloat("Editar Minutos", "Minutos a rellenar:", initialvalue=float(paso.get("minutos", 0.0)), parent=self)
-                if nuevos_min is not None: paso["minutos"] = nuevos_min
+                if nuevos_min is not None:
+                    paso["minutos"] = nuevos_min
 
         self.recargar_tabla()
         self.tree.selection_set(str(idx))
@@ -666,7 +823,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
 
     def duplicar(self):
         sel = self.tree.selection()
-        if not sel: return
+        if not sel:
+            return
         idx = int(sel[0])
         elemento_copiado = dict(self.escaleta[idx])
         self.escaleta.insert(idx + 1, elemento_copiado)
@@ -676,7 +834,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
 
     def subir(self):
         sel = self.tree.selection()
-        if not sel: return
+        if not sel:
+            return
         idx = int(sel[0])
         if idx > 0:
             self.escaleta[idx - 1], self.escaleta[idx] = self.escaleta[idx], self.escaleta[idx - 1]
@@ -685,7 +844,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
 
     def bajar(self):
         sel = self.tree.selection()
-        if not sel: return
+        if not sel:
+            return
         idx = int(sel[0])
         if idx < len(self.escaleta) - 1:
             self.escaleta[idx + 1], self.escaleta[idx] = self.escaleta[idx], self.escaleta[idx + 1]
@@ -694,7 +854,8 @@ class VentanaEditorEscaleta(tk.Toplevel):
 
     def eliminar(self):
         sel = self.tree.selection()
-        if not sel: return
+        if not sel:
+            return
         idx = int(sel[0])
         del self.escaleta[idx]
         self.recargar_tabla()
@@ -725,7 +886,7 @@ class VentanaAdminProgramas(tk.Toplevel):
 
         self.listbox = tk.Listbox(frame_list, font=("Segoe UI", 11), bg="#34495e", fg="white", selectbackground="#2980b9")
         self.listbox.pack(side="left", fill="both", expand=True)
-        
+
         scroll = tk.Scrollbar(frame_list, command=self.listbox.yview)
         scroll.pack(side="right", fill="y")
         self.listbox.config(yscrollcommand=scroll.set)
@@ -757,11 +918,18 @@ class VentanaAdminProgramas(tk.Toplevel):
 
     def nuevo_programa(self):
         nom = simpledialog.askstring("Nuevo", "Nombre del Programa (ej: Documentales):", parent=self)
-        if not nom: return
+        if not nom:
+            return
         prefijo = simpledialog.askstring("Prefijo", "Prefijo del archivo XML (ej: 6.-documentales):", parent=self)
-        if not prefijo: return
+        if not prefijo:
+            return
 
-        nuevo_id = f"prog_{len(self.programas) + 1}"
+        existentes = {p.get("id", "") for p in self.programas}
+        n = len(self.programas) + 1
+        while f"prog_{n}" in existentes:
+            n += 1
+        nuevo_id = f"prog_{n}"
+
         nuevo_item = {"id": nuevo_id, "nombre": nom, "prefijo": prefijo, "escaleta": []}
         self.programas.append(nuevo_item)
         guardar_programas(self.programas)
@@ -771,13 +939,15 @@ class VentanaAdminProgramas(tk.Toplevel):
 
     def abrir_escaleta(self):
         sel = self.listbox.curselection()
-        if not sel: return
+        if not sel:
+            return
         prog = self.programas[sel[0]]
         VentanaEditorEscaleta(self, prog, lambda: guardar_programas(self.programas))
 
     def eliminar_programa(self):
         sel = self.listbox.curselection()
-        if not sel: return
+        if not sel:
+            return
         idx = sel[0]
         prog = self.programas[idx]
         if messagebox.askyesno("Confirmar", f"¿Eliminar '{prog['nombre']}'?", parent=self):
@@ -796,18 +966,20 @@ class VentanaAdminProgramas(tk.Toplevel):
 
     def cambiar_clave_cliente(self):
         nueva = simpledialog.askstring("Seguridad", "Nueva contraseña de operador:", show="•", parent=self)
-        if not nueva: return
+        if not nueva:
+            return
         conf = simpledialog.askstring("Confirmar", "Repite la nueva contraseña:", show="•", parent=self)
         if nueva != conf:
             messagebox.showerror("Error", "Las contraseñas no coinciden.", parent=self)
             return
 
-        usr_guardado = "admin"
+        usr_guardado = calcular_hash("admin")
         if os.path.exists(ARCHIVO_SEGURIDAD_LOCAL):
             try:
                 with open(ARCHIVO_SEGURIDAD_LOCAL, "r", encoding="utf-8") as f:
-                    usr_guardado = json.load(f).get("usuario_hash", "")
-            except Exception: pass
+                    usr_guardado = json.load(f).get("usuario_hash") or usr_guardado
+            except Exception:
+                pass
 
         with open(ARCHIVO_SEGURIDAD_LOCAL, "w", encoding="utf-8") as f:
             json.dump({"usuario_hash": usr_guardado, "clave_hash": calcular_hash(nueva)}, f)
@@ -855,7 +1027,7 @@ class VentanaAdminProgramas(tk.Toplevel):
         if not os.path.exists(salida):
             errores.append(f"❌ Carpeta de salida inaccesible:\n   {salida}")
         else:
-            errores.append(f"✔ Carpeta de Salida XML conectada.")
+            errores.append("✔ Carpeta de Salida XML conectada.")
 
         carpetas_revisadas = set()
         for p in self.programas:
@@ -912,16 +1084,17 @@ def abrir_soporte_tecnico():
     frame_guia = tk.Frame(win_sop, bg="#2c3e50")
     frame_guia.pack(fill="both", expand=True, padx=25)
     tk.Label(frame_guia, text="Guía Rápida de Uso:", font=("Segoe UI", 9, "bold"), fg="#ecf0f1", bg="#2c3e50").pack(anchor="w")
-    tk.Label(frame_guia, text="1. Selecciona la carpeta donde tu Playout lee los XML arriba.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
-    tk.Label(frame_guia, text="2. Entra a 'Administrar' para armar las tandas y bloques.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
-    tk.Label(frame_guia, text="3. Presiona el botón del programa y cárgalo en Insta Playout.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
+    tk.Label(frame_guia, text="1. Elige la carpeta donde tu Playout lee los XML.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
+    tk.Label(frame_guia, text="2. Elige el período: Hoy, Semana, Mes o Hasta un día específico.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
+    tk.Label(frame_guia, text="3. Presiona el programa (o Ejecutar Todos) y cárgalo en Insta Playout.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
 
 # ==============================================================================
-# PANEL PRINCIPAL (GUI)
+# PANEL PRINCIPAL Y LÓGICA DE PROGRAMACIÓN MULTI-DÍA
 # ==============================================================================
 programas_activos = cargar_programas()
 registro_hoy = cargar_registro()
 botones_app = {}
+generacion_en_curso = False
 
 def cambiar_carpeta_salida():
     nueva = filedialog.askdirectory(title="Selecciona la carpeta donde guardar los XML", initialdir=config_general.get("carpeta_salida"))
@@ -932,49 +1105,341 @@ def cambiar_carpeta_salida():
         lbl_salida_path.config(text=nueva_limpia)
         messagebox.showinfo("Guardado", f"Carpeta de salida configurada en:\n{nueva_limpia}")
 
-def ejecutar_proceso_hilo(prog):
-    lbl_estado.config(text=f"Procesando '{prog['nombre']}'...", fg="#e67e22")
-    ventana.update_idletasks()
-    try:
-        ejecutar_motor_universal(prog)
-        hora = datetime.datetime.now().strftime("%I:%M %p")
-        registro_hoy[prog["id"]] = hora
-        guardar_registro(registro_hoy)
-        actualizar_botones()
-        lbl_estado.config(text=f"✔ Generado con éxito: '{prog['nombre']}' ({hora})", fg="#27ae60")
-    except Exception as e:
-        lbl_estado.config(text=f"Error en: '{prog['nombre']}'", fg="#c0392b")
-        messagebox.showerror("Error", f"Error generando '{prog['nombre']}':\n\n{e}")
+# --- Gestión del rango de fechas ---
+def establecer_rango_fechas(desde_date, hasta_date):
+    var_desde.set(desde_date.strftime("%d-%m-%Y"))
+    var_hasta.set(hasta_date.strftime("%d-%m-%Y"))
+
+def actualizar_resumen_rango(*args):
+    f1 = parsear_fecha_usuario(var_desde.get())
+    f2 = parsear_fecha_usuario(var_hasta.get())
+    if f1 is None or f2 is None:
+        lbl_resumen_rango.config(text="Formato: DD-MM-AAAA", fg="#c0392b")
+        return
+    if f2 < f1:
+        lbl_resumen_rango.config(text="Hasta < Desde", fg="#c0392b")
+        return
+    dias = (f2 - f1).days + 1
+    if dias == 1 and f1 == datetime.date.today():
+        lbl_resumen_rango.config(text="(Solo Hoy - 1 día)", fg="#27ae60")
+    elif dias == 1:
+        lbl_resumen_rango.config(text="(1 día)", fg="#2980b9")
+    else:
+        lbl_resumen_rango.config(text=f"({dias} días)", fg="#8e44ad")
+
+def obtener_rango_fechas():
+    f1 = parsear_fecha_usuario(var_desde.get())
+    f2 = parsear_fecha_usuario(var_hasta.get())
+    if f1 is None or f2 is None:
+        messagebox.showerror("Fecha Inválida", "Verifica las fechas 'Desde' y 'Hasta'.\nUsa el formato DD-MM-AAAA (ej: 23-11-2026) o el calendario 📅.")
+        return None
+    if f2 < f1:
+        messagebox.showerror("Rango Inválido", "La fecha 'Hasta' no puede ser anterior a la fecha 'Desde'.")
+        return None
+
+    total_dias = (f2 - f1).days + 1
+    if total_dias > 366:
+        if not messagebox.askyesno("Rango muy amplio", f"Seleccionaste {total_dias} días ({f1.strftime('%d-%m-%Y')} al {f2.strftime('%d-%m-%Y')}).\n\n¿Estás seguro de continuar?"):
+            return None
+
+    lista = [f1 + datetime.timedelta(days=i) for i in range(total_dias)]
+    return f1, f2, lista
+
+def preset_hoy():
+    hoy = datetime.date.today()
+    establecer_rango_fechas(hoy, hoy)
+
+def abrir_menu_semana(event=None):
+    hoy = datetime.date.today()
+    fin_7d = hoy + datetime.timedelta(days=6)
+    fin_esta_sem = hoy + datetime.timedelta(days=(6 - hoy.weekday()))
+    prox_lun = hoy + datetime.timedelta(days=(7 - hoy.weekday()))
+    prox_dom = prox_lun + datetime.timedelta(days=6)
+
+    menu = tk.Menu(ventana, tearoff=0, font=("Segoe UI", 9))
+    menu.add_command(
+        label=f"Próximos 7 días ({hoy.strftime('%d/%m')} al {fin_7d.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(hoy, fin_7d)
+    )
+    menu.add_command(
+        label=f"Esta semana hasta Domingo ({hoy.strftime('%d/%m')} al {fin_esta_sem.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(hoy, fin_esta_sem)
+    )
+    menu.add_command(
+        label=f"Próxima semana Lun-Dom ({prox_lun.strftime('%d/%m')} al {prox_dom.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(prox_lun, prox_dom)
+    )
+
+    x = btn_sem.winfo_rootx()
+    y = btn_sem.winfo_rooty() + btn_sem.winfo_height()
+    menu.tk_popup(x, y)
+
+def abrir_menu_mes(event=None):
+    hoy = datetime.date.today()
+    inicio_mes_actual = datetime.date(hoy.year, hoy.month, 1)
+    fin_mes_actual = ultimo_dia_del_mes(hoy.year, hoy.month)
+
+    if hoy.month == 12:
+        prox_anio, prox_mes = hoy.year + 1, 1
+    else:
+        prox_anio, prox_mes = hoy.year, hoy.month + 1
+    inicio_prox_mes = datetime.date(prox_anio, prox_mes, 1)
+    fin_prox_mes = ultimo_dia_del_mes(prox_anio, prox_mes)
+
+    menu = tk.Menu(ventana, tearoff=0, font=("Segoe UI", 9))
+    menu.add_command(
+        label=f"Resto de este mes ({hoy.strftime('%d/%m')} al {fin_mes_actual.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(hoy, fin_mes_actual)
+    )
+    menu.add_command(
+        label=f"Mes actual completo ({inicio_mes_actual.strftime('%d/%m')} al {fin_mes_actual.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(inicio_mes_actual, fin_mes_actual)
+    )
+    menu.add_command(
+        label=f"Próximo mes completo ({inicio_prox_mes.strftime('%d/%m')} al {fin_prox_mes.strftime('%d/%m')})",
+        command=lambda: establecer_rango_fechas(inicio_prox_mes, fin_prox_mes)
+    )
+
+    x = btn_mes.winfo_rootx()
+    y = btn_mes.winfo_rooty() + btn_mes.winfo_height()
+    menu.tk_popup(x, y)
+
+def seleccionar_fecha_campo(es_desde):
+    var_objetivo = var_desde if es_desde else var_hasta
+    fecha_act = parsear_fecha_usuario(var_objetivo.get()) or datetime.date.today()
+    titulo = "Fecha Inicial (Desde)" if es_desde else "Fecha Final (Hasta)"
+
+    def al_elegir(nueva_fecha):
+        var_objetivo.set(nueva_fecha.strftime("%d-%m-%Y"))
+        if es_desde:
+            f_h = parsear_fecha_usuario(var_hasta.get())
+            if f_h and nueva_fecha > f_h:
+                var_hasta.set(nueva_fecha.strftime("%d-%m-%Y"))
+        else:
+            f_d = parsear_fecha_usuario(var_desde.get())
+            if f_d and nueva_fecha < f_d:
+                var_desde.set(nueva_fecha.strftime("%d-%m-%Y"))
+
+    VentanaCalendario(ventana, fecha_act, al_elegir, titulo=titulo)
+
+def seleccionar_hasta_fecha():
+    fecha_act = parsear_fecha_usuario(var_hasta.get()) or datetime.date.today()
+
+    def al_elegir(fecha_fin):
+        f_d = parsear_fecha_usuario(var_desde.get())
+        if f_d is None or fecha_fin < f_d:
+            hoy = datetime.date.today()
+            nueva_desde = hoy if hoy <= fecha_fin else fecha_fin
+            var_desde.set(nueva_desde.strftime("%d-%m-%Y"))
+        var_hasta.set(fecha_fin.strftime("%d-%m-%Y"))
+
+    VentanaCalendario(ventana, fecha_act, al_elegir, titulo="Programar hasta el día...")
+
+# --- Ejecución de lotes en hilo secundario (Thread-Safe) ---
+def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
+    global generacion_en_curso
+    if generacion_en_curso:
+        messagebox.showwarning("Ocupado", "Ya hay una generación en proceso. Espera a que termine.")
+        return
+
+    tareas = []
+    omitidos = 0
+    for prog in lista_programas:
+        for fecha_obj in lista_fechas:
+            if not sobrescribir and os.path.exists(ruta_xml_programa(prog, fecha_obj)):
+                omitidos += 1
+            else:
+                tareas.append((prog, fecha_obj))
+
+    if not tareas:
+        messagebox.showinfo("Sin cambios", "Todos los archivos XML del rango seleccionado ya existen en la carpeta de salida.")
+        return
+
+    generacion_en_curso = True
+    total = len(tareas)
+    progress_lote.configure(maximum=total, value=0)
+    progress_lote.pack(side="bottom", fill="x", padx=20, pady=(2, 2), before=lbl_estado)
+    btn_all.config(state="disabled")
+
+    def worker():
+        global generacion_en_curso
+        hoy = datetime.date.today()
+        generados = 0
+        errores = []
+
+        try:
+            for idx, (prog, fecha_obj) in enumerate(tareas, start=1):
+                fecha_txt = fecha_obj.strftime("%d-%m-%Y")
+                ventana.after(0, lambda i=idx, t=total, n=prog['nombre'], f=fecha_txt: (
+                    lbl_estado.config(text=f"Procesando [{i}/{t}] '{n}' ({f})...", fg="#e67e22"),
+                    progress_lote.configure(value=i - 1)
+                ))
+
+                try:
+                    ejecutar_motor_universal(prog, fecha_objetivo=fecha_obj)
+                    generados += 1
+
+                    if fecha_obj == hoy:
+                        hora = datetime.datetime.now().strftime("%I:%M %p")
+                        def marcar_hoy(pid=prog["id"], h=hora):
+                            registro_hoy[pid] = h
+                            guardar_registro(registro_hoy)
+                            actualizar_botones()
+                        ventana.after(0, marcar_hoy)
+
+                except Exception as e:
+                    errores.append(f"• {prog['nombre']} ({fecha_txt}): {e}")
+
+                ventana.after(0, lambda i=idx: progress_lote.configure(value=i))
+
+        finally:
+            def finalizar_ui():
+                global generacion_en_curso
+                generacion_en_curso = False
+                btn_all.config(state="normal")
+                progress_lote.pack_forget()
+
+                if errores and generados == 0:
+                    lbl_estado.config(text="Error al generar XML", fg="#c0392b")
+                    messagebox.showerror("Error en Generación", "\n\n".join(errores[:8]))
+                elif errores:
+                    lbl_estado.config(text=f"Completado con avisos: {generados} generados, {len(errores)} errores", fg="#e67e22")
+                    resumen = f"Se generaron {generados} archivos XML.\nOmitidos (ya existían): {omitidos}\n\nErrores ({len(errores)}):\n" + "\n".join(errores[:6])
+                    messagebox.showwarning("Completado con Errores", resumen)
+                else:
+                    hora_fin = datetime.datetime.now().strftime("%I:%M %p")
+                    if total == 1 and len(lista_fechas) == 1:
+                        lbl_estado.config(text=f"✔ Generado: '{tareas[0][0]['nombre']}' ({tareas[0][1].strftime('%d-%m-%Y')}) - {hora_fin}", fg="#27ae60")
+                    else:
+                        f_ini = lista_fechas[0].strftime("%d-%m-%Y")
+                        f_fin = lista_fechas[-1].strftime("%d-%m-%Y")
+                        lbl_estado.config(text=f"✔ Lote listo: {generados} XML creados ({f_ini} al {f_fin})", fg="#27ae60")
+                        extra_omit = f"\nArchivos omitidos (ya existían): {omitidos}" if omitidos > 0 else ""
+                        messagebox.showinfo("Programación Generada", f"¡Proceso completado con éxito!\n\nArchivos XML creados: {generados}{extra_omit}\nPeríodo: {f_ini} al {f_fin}")
+
+            ventana.after(0, finalizar_ui)
+
+    threading.Thread(target=worker, daemon=True).start()
 
 def solicitar_ejecucion(prog, forzar=False):
-    if prog["id"] in registro_hoy and not forzar:
-        hora = registro_hoy[prog["id"]]
-        if not messagebox.askyesno("Aviso", f"'{prog['nombre']}' YA SE GENERÓ HOY a las {hora}.\n\n¿Volver a generar?"):
+    if generacion_en_curso:
+        messagebox.showwarning("Ocupado", "Ya hay una generación en proceso. Espera a que termine.")
+        return
+
+    rango = obtener_rango_fechas()
+    if not rango:
+        return
+    f1, f2, lista_fechas = rango
+    hoy = datetime.date.today()
+
+    # Caso rápido: Solo Hoy (comportamiento clásico de 1 clic)
+    if len(lista_fechas) == 1 and f1 == hoy:
+        if prog["id"] in registro_hoy and not forzar:
+            hora = registro_hoy[prog["id"]]
+            if not messagebox.askyesno("Aviso", f"'{prog['nombre']}' YA SE GENERÓ HOY a las {hora}.\n\n¿Volver a generar?"):
+                return
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True)
+        return
+
+    # Caso 1 día distinto de hoy o rango multi-día
+    existentes = sum(1 for f in lista_fechas if os.path.exists(ruta_xml_programa(prog, f)))
+    f1_str, f2_str = f1.strftime("%d-%m-%Y"), f2.strftime("%d-%m-%Y")
+
+    if existentes > 0:
+        resp = messagebox.askyesnocancel(
+            "Archivos Existentes",
+            f"Programa: '{prog['nombre']}'\n"
+            f"Período: {f1_str} al {f2_str} ({len(lista_fechas)} día(s))\n\n"
+            f"Ya existen {existentes} archivo(s) XML en la carpeta de salida.\n\n"
+            f"[SÍ] = Sobrescribir todos ({len(lista_fechas)} XML)\n"
+            f"[NO] = Generar solo los faltantes ({len(lista_fechas) - existentes} XML)\n"
+            f"[CANCELAR] = Cancelar"
+        )
+        if resp is None:
             return
-    threading.Thread(target=ejecutar_proceso_hilo, args=(prog,), daemon=True).start()
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=resp)
+    else:
+        if len(lista_fechas) > 1:
+            if not messagebox.askyesno(
+                "Confirmar Programación",
+                f"¿Generar '{prog['nombre']}' para {len(lista_fechas)} días?\n"
+                f"Del {f1_str} al {f2_str}\n\n"
+                f"Se crearán {len(lista_fechas)} archivos XML."
+            ):
+                return
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True)
 
 def ejecutar_todos():
-    pendientes = [p for p in programas_activos if p["id"] not in registro_hoy]
-    if len(pendientes) < len(programas_activos):
-        resp = messagebox.askyesnocancel("Ejecutar Todo", "¿Deseas ejecutar SOLO los programas pendientes?\n\n[SÍ] = Solo pendientes\n[NO] = Todos")
-        if resp is None: return
-        lista = pendientes if resp else programas_activos
-    else:
-        if not messagebox.askyesno("Confirmar", "¿Iniciar la generación de TODOS?"): return
-        lista = programas_activos
+    if generacion_en_curso:
+        messagebox.showwarning("Ocupado", "Ya hay una generación en proceso. Espera a que termine.")
+        return
+    if not programas_activos:
+        messagebox.showinfo("Sin programas", "No hay programas configurados para generar.")
+        return
 
-    def serie():
-        for p in lista:
-            ejecutar_proceso_hilo(p)
-    threading.Thread(target=serie, daemon=True).start()
+    rango = obtener_rango_fechas()
+    if not rango:
+        return
+    f1, f2, lista_fechas = rango
+    hoy = datetime.date.today()
+
+    # Caso Solo Hoy
+    if len(lista_fechas) == 1 and f1 == hoy:
+        pendientes = [p for p in programas_activos if p["id"] not in registro_hoy]
+        if len(pendientes) < len(programas_activos):
+            resp = messagebox.askyesnocancel("Ejecutar Todo", "¿Deseas ejecutar SOLO los programas pendientes de hoy?\n\n[SÍ] = Solo pendientes\n[NO] = Todos")
+            if resp is None:
+                return
+            lista_progs = pendientes if resp else programas_activos
+        else:
+            if not messagebox.askyesno("Confirmar", "¿Iniciar la generación de TODOS los programas para HOY?"):
+                return
+            lista_progs = programas_activos
+        lanzar_lote_generacion(lista_progs, lista_fechas, sobrescribir=True)
+        return
+
+    # Caso multi-día o fecha futura/pasada
+    total_xml = len(programas_activos) * len(lista_fechas)
+    existentes = sum(
+        1
+        for p in programas_activos
+        for f in lista_fechas
+        if os.path.exists(ruta_xml_programa(p, f))
+    )
+    f1_str, f2_str = f1.strftime("%d-%m-%Y"), f2.strftime("%d-%m-%Y")
+
+    if existentes > 0:
+        resp = messagebox.askyesnocancel(
+            "Confirmar Programación Completa",
+            f"Programas: {len(programas_activos)}\n"
+            f"Período: {f1_str} al {f2_str} ({len(lista_fechas)} día(s))\n"
+            f"Total a generar: {total_xml} XML\n\n"
+            f"Se detectaron {existentes} archivo(s) XML ya existentes.\n\n"
+            f"[SÍ] = Sobrescribir todo ({total_xml} XML)\n"
+            f"[NO] = Solo generar faltantes ({total_xml - existentes} XML)\n"
+            f"[CANCELAR] = Cancelar"
+        )
+        if resp is None:
+            return
+        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=resp)
+    else:
+        if not messagebox.askyesno(
+            "Confirmar Programación Completa",
+            f"¿Generar TODOS los programas ({len(programas_activos)})?\n\n"
+            f"Período: {f1_str} al {f2_str} ({len(lista_fechas)} día(s))\n"
+            f"Se crearán {total_xml} archivos XML en total."
+        ):
+            return
+        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=True)
 
 def actualizar_botones():
     for p in programas_activos:
         btn = botones_app.get(p["id"])
-        if not btn: continue
+        if not btn:
+            continue
         if p["id"] in registro_hoy:
             hora = registro_hoy[p["id"]]
-            btn.config(text=f"✔  {p['nombre']}   (Generado: {hora})", bg="#27ae60", activebackground="#2ecc71")
+            btn.config(text=f"✔  {p['nombre']}   (Hoy: {hora})", bg="#27ae60", activebackground="#2ecc71")
         else:
             btn.config(text=f"▶  {p['nombre']}", bg="#2980b9", activebackground="#3498db")
 
@@ -984,8 +1449,13 @@ def reconstruir_interfaz_botones():
     botones_app.clear()
 
     if not programas_activos:
-        tk.Label(frame_scroll, text="No hay programas creados.\nEntra en '⚙ Administrar' para crear tu primer programa.", 
-                 font=("Segoe UI", 10, "italic"), fg="#7f8c8d", bg="#f4f6f9").pack(pady=40)
+        tk.Label(
+            frame_scroll,
+            text="No hay programas creados.\nEntra en '⚙ Administrar' para crear tu primer programa.",
+            font=("Segoe UI", 10, "italic"),
+            fg="#7f8c8d",
+            bg="#f4f6f9"
+        ).pack(pady=40)
         return
 
     for prog in programas_activos:
@@ -1080,7 +1550,8 @@ def iniciar_flujo_licenciamiento():
         try:
             with open(ARCHIVO_LICENCIA_LOCAL, "r", encoding="utf-8") as f:
                 clave_guardada = f.read().strip()
-        except Exception: pass
+        except Exception:
+            pass
 
     if clave_guardada:
         try:
@@ -1093,8 +1564,7 @@ def iniciar_flujo_licenciamiento():
             if resp.get("valido"):
                 datos_remotos["cliente"] = resp.get("cliente", "")
                 datos_remotos["vence"] = resp.get("vence", "")
-                
-                # Cargar ajustes remotos desde Google Sheets
+
                 ajustes = resp.get("ajustes", {})
                 datos_remotos["contacto"] = ajustes.get("contacto", "+584120000000")
                 datos_remotos["version_remota"] = ajustes.get("version", VERSION_LOCAL)
@@ -1106,8 +1576,10 @@ def iniciar_flujo_licenciamiento():
                 return
             else:
                 messagebox.showerror("Licencia Inválida", f"Acceso Denegado:\n\n{resp.get('mensaje')}")
-                try: os.remove(ARCHIVO_LICENCIA_LOCAL)
-                except Exception: pass
+                try:
+                    os.remove(ARCHIVO_LICENCIA_LOCAL)
+                except Exception:
+                    pass
                 pedir_activacion_licencia(hwid)
         except Exception:
             messagebox.showwarning("Sin Conexión", "No se pudo verificar la licencia con el servidor central.\nVerifica tu conexión a internet.")
@@ -1120,15 +1592,15 @@ def actualizar_insignia_licencia():
     dias = calcular_dias_desde_fecha(vence)
     datos_remotos["dias_restantes"] = dias
     cli = datos_remotos.get("cliente", "Autorizado")
-    
+
     if dias > 15:
-        color = "#27ae60"  # Verde
+        color = "#27ae60"
         texto = f"✔ Licencia Activa ({cli}) | Vence en {dias} días ({vence})"
     elif dias > 3:
-        color = "#e67e22"  # Naranja
+        color = "#e67e22"
         texto = f"⚠ Atención: Tu licencia vence en {dias} días ({cli})"
     else:
-        color = "#c0392b"  # Rojo
+        color = "#c0392b"
         texto = f"🚨 URGENTE: Tu licencia vence en {dias} días. Contacta a soporte."
 
     lbl_licencia_info.config(text=texto, fg=color)
@@ -1170,9 +1642,14 @@ def pedir_activacion_licencia(hwid):
             if resp.get("valido"):
                 with open(ARCHIVO_LICENCIA_LOCAL, "w", encoding="utf-8") as f:
                     f.write(clave)
-                
+
                 datos_remotos["cliente"] = resp.get("cliente", "")
                 datos_remotos["vence"] = resp.get("vence", "")
+                ajustes = resp.get("ajustes", {})
+                datos_remotos["contacto"] = ajustes.get("contacto", "+584120000000")
+                datos_remotos["version_remota"] = ajustes.get("version", VERSION_LOCAL)
+                datos_remotos["url_descarga"] = ajustes.get("url_descarga", "")
+                datos_remotos["notas_actualizacion"] = ajustes.get("notas", "")
 
                 messagebox.showinfo("¡Licencia Activada!", f"Estación: {datos_remotos['cliente']}\nVigencia: {datos_remotos['vence']}\n\nAhora crea tu Usuario y Contraseña de operador local.", parent=win_act)
                 win_act.destroy()
@@ -1225,8 +1702,8 @@ def pedir_creacion_cuenta_local():
 # ==============================================================================
 ventana = tk.Tk()
 ventana.title(f"Panel Playout Generator Suite v{VERSION_LOCAL}")
-ventana.geometry("580x740")
-ventana.resizable(False, False)
+ventana.geometry("620x720")
+ventana.minsize(560, 620)
 ventana.configure(bg="#f4f6f9")
 ventana.withdraw()
 
@@ -1239,8 +1716,10 @@ tk.Label(frame_top, text="Generador de Contenido", font=("Segoe UI", 14, "bold")
 btn_lock = tk.Button(frame_top, text="🔒 Bloquear", font=("Segoe UI", 8, "bold"), bg="#e67e22", fg="white", relief="flat", cursor="hand2", command=bloquear_pantalla)
 btn_lock.pack(side="right", padx=2)
 
-btn_admin = tk.Button(frame_top, text="⚙ Administrar", font=("Segoe UI", 8, "bold"), bg="#34495e", fg="white", relief="flat", cursor="hand2", 
-                      command=lambda: VentanaAdminProgramas(ventana, programas_activos, reconstruir_interfaz_botones))
+btn_admin = tk.Button(
+    frame_top, text="⚙ Administrar", font=("Segoe UI", 8, "bold"), bg="#34495e", fg="white", relief="flat", cursor="hand2",
+    command=lambda: VentanaAdminProgramas(ventana, programas_activos, reconstruir_interfaz_botones)
+)
 btn_admin.pack(side="right", padx=2)
 
 btn_sop = tk.Button(frame_top, text="🛠 Soporte", font=("Segoe UI", 8, "bold"), bg="#2980b9", fg="white", relief="flat", cursor="hand2", command=abrir_soporte_tecnico)
@@ -1252,21 +1731,76 @@ lbl_licencia_info.pack(pady=(2, 4))
 
 # Selector de Carpeta de Salida XML
 frame_salida = tk.Frame(ventana, bg="#ecf0f1", padx=10, pady=5)
-frame_salida.pack(fill="x", padx=20, pady=(0, 10))
+frame_salida.pack(fill="x", padx=20, pady=(0, 8))
 
 tk.Label(frame_salida, text="📁 Salida XML:", font=("Segoe UI", 8, "bold"), bg="#ecf0f1", fg="#2c3e50").pack(side="left")
 lbl_salida_path = tk.Label(frame_salida, text=limpiar_ruta(config_general.get("carpeta_salida")), font=("Segoe UI", 8), bg="#ecf0f1", fg="#7f8c8d", anchor="w")
 lbl_salida_path.pack(side="left", padx=5, fill="x", expand=True)
 
-tk.Button(frame_salida, text="Cambiar", font=("Segoe UI", 7, "bold"), bg="#bdc3c7", relief="flat", command=cambiar_carpeta_salida).pack(side="right")
+tk.Button(frame_salida, text="Cambiar", font=("Segoe UI", 7, "bold"), bg="#bdc3c7", relief="flat", cursor="hand2", command=cambiar_carpeta_salida).pack(side="right")
 
+# Panel de Período / Rango de Fechas (Hoy, Semana, Mes, Hasta un día)
+frame_rango = tk.Frame(ventana, bg="#e8eef3", padx=10, pady=7, highlightbackground="#d0d7de", highlightthickness=1)
+frame_rango.pack(fill="x", padx=20, pady=(0, 8))
+
+fila_presets = tk.Frame(frame_rango, bg="#e8eef3")
+fila_presets.pack(fill="x", pady=(0, 5))
+
+tk.Label(fila_presets, text="📅 Período:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#2c3e50").pack(side="left", padx=(0, 6))
+
+tk.Button(fila_presets, text="Hoy", font=("Segoe UI", 8, "bold"), bg="#27ae60", fg="white", relief="flat", cursor="hand2", padx=8, command=preset_hoy).pack(side="left", padx=2)
+
+btn_sem = tk.Button(fila_presets, text="Toda la Semana ▾", font=("Segoe UI", 8, "bold"), bg="#2980b9", fg="white", relief="flat", cursor="hand2", padx=8, command=abrir_menu_semana)
+btn_sem.pack(side="left", padx=2)
+
+btn_mes = tk.Button(fila_presets, text="Todo el Mes ▾", font=("Segoe UI", 8, "bold"), bg="#8e44ad", fg="white", relief="flat", cursor="hand2", padx=8, command=abrir_menu_mes)
+btn_mes.pack(side="left", padx=2)
+
+tk.Button(fila_presets, text="🎯 Hasta el día...", font=("Segoe UI", 8, "bold"), bg="#d35400", fg="white", relief="flat", cursor="hand2", padx=8, command=seleccionar_hasta_fecha).pack(side="left", padx=2)
+
+fila_fechas = tk.Frame(frame_rango, bg="#e8eef3")
+fila_fechas.pack(fill="x")
+
+hoy_str = datetime.date.today().strftime("%d-%m-%Y")
+var_desde = tk.StringVar(value=hoy_str)
+var_hasta = tk.StringVar(value=hoy_str)
+
+tk.Label(fila_fechas, text="Desde:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#34495e").pack(side="left")
+entry_desde = tk.Entry(fila_fechas, textvariable=var_desde, font=("Segoe UI", 9), width=11, justify="center")
+entry_desde.pack(side="left", padx=(4, 2))
+tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=lambda: seleccionar_fecha_campo(True)).pack(side="left", padx=(0, 10))
+
+tk.Label(fila_fechas, text="Hasta:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#34495e").pack(side="left")
+entry_hasta = tk.Entry(fila_fechas, textvariable=var_hasta, font=("Segoe UI", 9), width=11, justify="center")
+entry_hasta.pack(side="left", padx=(4, 2))
+tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=lambda: seleccionar_fecha_campo(False)).pack(side="left", padx=(0, 8))
+
+lbl_resumen_rango = tk.Label(fila_fechas, text="(Solo Hoy - 1 día)", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#27ae60")
+lbl_resumen_rango.pack(side="right")
+
+var_desde.trace_add("write", actualizar_resumen_rango)
+var_hasta.trace_add("write", actualizar_resumen_rango)
+
+# Botón Ejecutar Todos
 btn_all = tk.Button(ventana, text="⚡ EJECUTAR TODOS LOS PROGRAMAS", font=("Segoe UI", 11, "bold"), bg="#8e44ad", fg="white", relief="flat", cursor="hand2", height=2, command=ejecutar_todos)
 btn_all.pack(fill="x", padx=20, pady=(0, 8))
 
-tk.Frame(ventana, height=2, bg="#dcdde1").pack(fill="x", padx=20, pady=(0, 8))
+tk.Frame(ventana, height=2, bg="#dcdde1").pack(fill="x", padx=20, pady=(0, 6))
 
-canvas = tk.Canvas(ventana, bg="#f4f6f9", highlightthickness=0)
-scrollbar = ttk.Scrollbar(ventana, orient="vertical", command=canvas.yview)
+# Pie de ventana (empacado antes que el canvas para que nunca quede oculto)
+tk.Button(ventana, text="Cerrar Aplicación", font=("Segoe UI", 9), bg="#bdc3c7", fg="#2c3e50", relief="flat", cursor="hand2", command=ventana.destroy).pack(side="bottom", pady=(2, 8))
+
+lbl_estado = tk.Label(ventana, text="Listo para ejecutar", font=("Segoe UI", 9, "italic"), bg="#f4f6f9", fg="#7f8c8d")
+lbl_estado.pack(side="bottom", pady=3)
+
+progress_lote = ttk.Progressbar(ventana, mode="determinate")
+
+# Lista desplazable de programas
+frame_lista = tk.Frame(ventana, bg="#f4f6f9")
+frame_lista.pack(side="top", fill="both", expand=True, padx=(20, 10))
+
+canvas = tk.Canvas(frame_lista, bg="#f4f6f9", highlightthickness=0)
+scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=canvas.yview)
 frame_scroll = tk.Frame(canvas, bg="#f4f6f9")
 
 frame_scroll.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
@@ -1274,13 +1808,8 @@ canvas_window = canvas.create_window((0, 0), window=frame_scroll, anchor="nw")
 canvas.bind('<Configure>', lambda event: canvas.itemconfig(canvas_window, width=event.width))
 canvas.configure(yscrollcommand=scrollbar.set)
 
-canvas.pack(side="top", fill="both", expand=True, padx=(20, 5))
-scrollbar.pack(side="right", fill="y", before=canvas)
-
-lbl_estado = tk.Label(ventana, text="Listo para ejecutar", font=("Segoe UI", 9, "italic"), bg="#f4f6f9", fg="#7f8c8d")
-lbl_estado.pack(side="bottom", pady=4)
-
-tk.Button(ventana, text="Cerrar Aplicación", font=("Segoe UI", 9), bg="#bdc3c7", fg="#2c3e50", relief="flat", cursor="hand2", command=ventana.destroy).pack(side="bottom", pady=2)
+canvas.pack(side="left", fill="both", expand=True)
+scrollbar.pack(side="right", fill="y")
 
 reconstruir_interfaz_botones()
 
