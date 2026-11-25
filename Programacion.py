@@ -42,6 +42,24 @@ ARCHIVO_REGISTRO_DIARIO = os.path.join(BASE_DIR, "registro_ejecuciones.json")
 
 INTENTOS_MAXIMOS = 3
 
+MESES_ES = [
+    "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+]
+DIAS_CORTOS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+MODOS_CARPETAS = [
+    ("por_anio_mes_dia", "Por Año / Mes / Día (2026\\11 - Noviembre\\2026-11-23)"),
+    ("por_fecha_iso", "Por Fecha Año-Mes-Día (2026-11-23)"),
+    ("por_dia", "Por Día (23-11-2026)"),
+    ("por_dia_nombre", "Por Día con Nombre (Lun 23-11-2026)"),
+    ("por_mes_dia", "Por Mes y Día (11 - Noviembre 2026\\23-11-2026)"),
+    ("por_programa", "Por Programa (Sentir Llanero)"),
+    ("por_programa_mes", "Por Programa y Mes (Sentir Llanero\\11 - Noviembre 2026)"),
+    ("por_rango", "Por Período / Lote (Del 23-11 al 29-11-2026)"),
+    ("sin_subcarpetas", "Sin subcarpetas (Todo en la raíz)")
+]
+
 # Datos remotos cargados dinámicamente desde Google Sheets
 datos_remotos = {
     "cliente": "",
@@ -83,6 +101,12 @@ def limpiar_ruta(texto):
         if ":" in partes[0]:
             return partes[0] + "\\" + "\\".join(partes[1:])
         return "\\".join(partes)
+
+def limpiar_nombre_carpeta(nombre):
+    """Sanitiza nombres de carpetas para evitar caracteres inválidos en Windows."""
+    invalidos = '<>:"/\\|?*'
+    limpio = "".join("_" if c in invalidos else c for c in str(nombre)).strip().rstrip(".")
+    return limpio or "Programa"
 
 def obtener_hwid():
     """Genera la huella única de la computadora del cliente."""
@@ -132,17 +156,20 @@ def ultimo_dia_del_mes(anio, mes):
     return datetime.date(anio, mes, num_dias)
 
 # ==============================================================================
-# CONFIGURACIÓN GENERAL (CARPETA DE SALIDA XML)
+# CONFIGURACIÓN GENERAL (CARPETA DE SALIDA XML Y ORGANIZACIÓN)
 # ==============================================================================
 def cargar_config_general():
+    default_dir = os.path.join(os.path.expanduser("~"), "Documents", "Playout_XML")
+    cfg = {"carpeta_salida": default_dir, "modo_carpetas": "por_anio_mes_dia"}
     if os.path.exists(ARCHIVO_CONFIG_GLOBAL):
         try:
             with open(ARCHIVO_CONFIG_GLOBAL, "r", encoding="utf-8") as f:
-                return json.load(f)
+                leido = json.load(f)
+                if isinstance(leido, dict):
+                    cfg.update(leido)
         except Exception:
             pass
-    default_dir = os.path.join(os.path.expanduser("~"), "Documents", "Playout_XML")
-    return {"carpeta_salida": default_dir}
+    return cfg
 
 def guardar_config_general(cfg):
     with open(ARCHIVO_CONFIG_GLOBAL, "w", encoding="utf-8") as f:
@@ -395,7 +422,7 @@ del "%~f0"
     threading.Thread(target=tarea_descarga, daemon=True).start()
 
 # ==============================================================================
-# MOTOR UNIVERSAL XML (IPO)
+# MOTOR UNIVERSAL XML (IPO) CON ORGANIZACIÓN EN SUBCARPETAS
 # ==============================================================================
 def recolectar_archivos(ruta_carpeta):
     ruta_limpia = limpiar_ruta(ruta_carpeta)
@@ -419,22 +446,64 @@ def crear_nodo_file(root, path_archivo, duracion):
     ET.SubElement(nodo, 'video', width='1280', height='720', rate='29.97003', aspect_ratio='16:9')
     ET.SubElement(nodo, 'audio', channels='2', rate='48000', bits='16')
 
-def ruta_xml_programa(prog, fecha_objetivo=None):
-    if fecha_objetivo is None:
-        fecha_objetivo = datetime.date.today()
-    carpeta_salida = limpiar_ruta(config_general.get("carpeta_salida", ""))
+def calcular_subcarpeta_lote(lista_fechas):
+    if not lista_fechas:
+        return None
+    f1, f2 = lista_fechas[0], lista_fechas[-1]
+    if f1 == f2:
+        return f1.strftime("%d-%m-%Y")
+    return f"Del {f1.strftime('%d-%m-%Y')} al {f2.strftime('%d-%m-%Y')}"
+
+def obtener_subcarpetas_xml(prog, fecha_objetivo, subcarpeta_lote=None):
+    """Retorna la lista de subcarpetas según el modo de organización elegido."""
+    modo = config_general.get("modo_carpetas", "por_anio_mes_dia")
     fecha_str = fecha_objetivo.strftime("%d-%m-%Y")
-    return limpiar_ruta(os.path.join(carpeta_salida, f"{prog['prefijo']} {fecha_str}.xml"))
+    fecha_iso = fecha_objetivo.strftime("%Y-%m-%d")
+    carpeta_mes = f"{fecha_objetivo.month:02d} - {MESES_ES[fecha_objetivo.month]} {fecha_objetivo.year}"
+    carpeta_prog = limpiar_nombre_carpeta(prog.get("nombre", "Programa"))
 
-def ejecutar_motor_universal(prog, fecha_objetivo=None):
+    if modo == "por_anio_mes_dia":
+        return [
+            str(fecha_objetivo.year),
+            f"{fecha_objetivo.month:02d} - {MESES_ES[fecha_objetivo.month]}",
+            fecha_iso
+        ]
+    elif modo == "por_fecha_iso":
+        return [fecha_iso]
+    elif modo == "por_dia":
+        return [fecha_str]
+    elif modo == "por_dia_nombre":
+        dia_nom = DIAS_CORTOS_ES[fecha_objetivo.weekday()]
+        return [f"{dia_nom} {fecha_str}"]
+    elif modo == "por_mes_dia":
+        return [carpeta_mes, fecha_str]
+    elif modo == "por_programa":
+        return [carpeta_prog]
+    elif modo == "por_programa_mes":
+        return [carpeta_prog, carpeta_mes]
+    elif modo == "por_rango":
+        return [subcarpeta_lote or fecha_str]
+    else:
+        return []
+
+def ruta_xml_programa(prog, fecha_objetivo=None, subcarpeta_lote=None):
+    if fecha_objetivo is None:
+        fecha_objetivo = datetime.date.today()
+    carpeta_base = limpiar_ruta(config_general.get("carpeta_salida", ""))
+    subcarpetas = obtener_subcarpetas_xml(prog, fecha_objetivo, subcarpeta_lote=subcarpeta_lote)
+    fecha_str = fecha_objetivo.strftime("%d-%m-%Y")
+    nombre_archivo = f"{prog['prefijo']} {fecha_str}.xml"
+    return limpiar_ruta(os.path.join(carpeta_base, *subcarpetas, nombre_archivo))
+
+def ejecutar_motor_universal(prog, fecha_objetivo=None, subcarpeta_lote=None):
     if fecha_objetivo is None:
         fecha_objetivo = datetime.date.today()
 
-    carpeta_salida = limpiar_ruta(config_general.get("carpeta_salida", ""))
-    if not os.path.exists(carpeta_salida):
-        os.makedirs(carpeta_salida)
+    archivo_salida = ruta_xml_programa(prog, fecha_objetivo, subcarpeta_lote=subcarpeta_lote)
+    carpeta_destino = os.path.dirname(archivo_salida)
+    if carpeta_destino and not os.path.exists(carpeta_destino):
+        os.makedirs(carpeta_destino, exist_ok=True)
 
-    archivo_salida = ruta_xml_programa(prog, fecha_objetivo)
     root = ET.Element('m_config', path=archivo_salida)
     ET.SubElement(root, 'video')
     ET.SubElement(root, 'audio', track_split='')
@@ -503,12 +572,6 @@ def ejecutar_motor_universal(prog, fecha_objetivo=None):
 # CALENDARIO VISUAL EN TKINTER PURO (SIN DEPENDENCIAS EXTERNAS)
 # ==============================================================================
 class VentanaCalendario(tk.Toplevel):
-    MESES_ES = [
-        "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ]
-    DIAS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-
     def __init__(self, parent, fecha_inicial, callback, titulo="Seleccionar Fecha"):
         super().__init__(parent)
         self.title(titulo)
@@ -522,7 +585,6 @@ class VentanaCalendario(tk.Toplevel):
         self.anio_vista = self.fecha_sel.year
         self.mes_vista = self.fecha_sel.month
 
-        # Cabecera de navegación
         frame_nav = tk.Frame(self, bg="#1a252f", pady=8, padx=10)
         frame_nav.pack(fill="x")
 
@@ -535,11 +597,9 @@ class VentanaCalendario(tk.Toplevel):
         tk.Button(frame_nav, text="›", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(1)).pack(side="right", padx=1)
         tk.Button(frame_nav, text="»", font=("Segoe UI", 9, "bold"), bg="#34495e", fg="white", relief="flat", width=3, command=lambda: self.cambiar_mes(12)).pack(side="right", padx=1)
 
-        # Grilla del calendario
         self.frame_grid = tk.Frame(self, bg="#2c3e50", padx=10, pady=8)
         self.frame_grid.pack()
 
-        # Pie con botón Hoy
         frame_pie = tk.Frame(self, bg="#2c3e50", pady=6)
         frame_pie.pack(fill="x", padx=10)
         tk.Button(frame_pie, text="Ir a Hoy", font=("Segoe UI", 8, "bold"), bg="#16a085", fg="white", relief="flat", command=self.elegir_hoy).pack(side="left")
@@ -554,8 +614,7 @@ class VentanaCalendario(tk.Toplevel):
         self.dibujar_mes()
 
     def elegir_hoy(self):
-        hoy = datetime.date.today()
-        self.callback(hoy)
+        self.callback(datetime.date.today())
         self.destroy()
 
     def seleccionar_dia(self, fecha_obj):
@@ -566,9 +625,9 @@ class VentanaCalendario(tk.Toplevel):
         for w in self.frame_grid.winfo_children():
             w.destroy()
 
-        self.lbl_mes_anio.config(text=f"{self.MESES_ES[self.mes_vista]} {self.anio_vista}")
+        self.lbl_mes_anio.config(text=f"{MESES_ES[self.mes_vista]} {self.anio_vista}")
 
-        for col, nombre_dia in enumerate(self.DIAS_ES):
+        for col, nombre_dia in enumerate(DIAS_CORTOS_ES):
             fg_col = "#e67e22" if col == 6 else "#bdc3c7"
             tk.Label(self.frame_grid, text=nombre_dia, font=("Segoe UI", 8, "bold"), bg="#2c3e50", fg=fg_col, width=4).grid(row=0, column=col, pady=(0, 4))
 
@@ -580,17 +639,13 @@ class VentanaCalendario(tk.Toplevel):
             for col_idx, fecha_dia in enumerate(semana):
                 es_mes_actual = (fecha_dia.month == self.mes_vista)
                 if fecha_dia == self.fecha_sel:
-                    bg = "#2980b9"
-                    fg = "white"
+                    bg, fg = "#2980b9", "white"
                 elif fecha_dia == hoy:
-                    bg = "#27ae60"
-                    fg = "white"
+                    bg, fg = "#27ae60", "white"
                 elif es_mes_actual:
-                    bg = "#34495e"
-                    fg = "white"
+                    bg, fg = "#34495e", "white"
                 else:
-                    bg = "#243342"
-                    fg = "#7f8c8d"
+                    bg, fg = "#243342", "#7f8c8d"
 
                 btn = tk.Button(
                     self.frame_grid,
@@ -891,7 +946,6 @@ class VentanaAdminProgramas(tk.Toplevel):
         scroll.pack(side="right", fill="y")
         self.listbox.config(yscrollcommand=scroll.set)
 
-        # Fila 1 de acciones
         frame_acciones = tk.Frame(self, bg="#2c3e50")
         frame_acciones.pack(fill="x", padx=20, pady=6)
 
@@ -900,7 +954,6 @@ class VentanaAdminProgramas(tk.Toplevel):
         tk.Button(frame_acciones, text="🗑 Eliminar", bg="#c0392b", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.eliminar_programa).pack(side="left", padx=3)
         tk.Button(frame_acciones, text="🔍 Diagnóstico de Rutas", bg="#16a085", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", command=self.diagnostico_rutas).pack(side="right", padx=3)
 
-        # Fila 2 de acciones (Respaldos y Seguridad)
         frame_acciones2 = tk.Frame(self, bg="#2c3e50")
         frame_acciones2.pack(fill="x", padx=20, pady=6)
 
@@ -1084,7 +1137,7 @@ def abrir_soporte_tecnico():
     frame_guia = tk.Frame(win_sop, bg="#2c3e50")
     frame_guia.pack(fill="both", expand=True, padx=25)
     tk.Label(frame_guia, text="Guía Rápida de Uso:", font=("Segoe UI", 9, "bold"), fg="#ecf0f1", bg="#2c3e50").pack(anchor="w")
-    tk.Label(frame_guia, text="1. Elige la carpeta donde tu Playout lee los XML.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
+    tk.Label(frame_guia, text="1. Elige la carpeta de salida y cómo organizar las subcarpetas.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
     tk.Label(frame_guia, text="2. Elige el período: Hoy, Semana, Mes o Hasta un día específico.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
     tk.Label(frame_guia, text="3. Presiona el programa (o Ejecutar Todos) y cárgalo en Insta Playout.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
 
@@ -1103,7 +1156,36 @@ def cambiar_carpeta_salida():
         config_general["carpeta_salida"] = nueva_limpia
         guardar_config_general(config_general)
         lbl_salida_path.config(text=nueva_limpia)
+        actualizar_ejemplo_carpeta()
         messagebox.showinfo("Guardado", f"Carpeta de salida configurada en:\n{nueva_limpia}")
+
+def abrir_carpeta_salida():
+    ruta = limpiar_ruta(config_general.get("carpeta_salida", ""))
+    if not os.path.exists(ruta):
+        os.makedirs(ruta, exist_ok=True)
+    try:
+        os.startfile(ruta)
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo abrir la carpeta:\n{ruta}\n\n{e}")
+
+def al_cambiar_modo_carpetas(event=None):
+    etiqueta = combo_carpetas.get()
+    for clave, texto in MODOS_CARPETAS:
+        if texto == etiqueta:
+            config_general["modo_carpetas"] = clave
+            guardar_config_general(config_general)
+            break
+    actualizar_ejemplo_carpeta()
+
+def actualizar_ejemplo_carpeta():
+    hoy = datetime.date.today()
+    ejemplo_prog = programas_activos[0] if programas_activos else {"nombre": "Sentir Llanero", "prefijo": "3.-sentir llanero"}
+    f1 = parsear_fecha_usuario(var_desde.get()) or hoy
+    f2 = parsear_fecha_usuario(var_hasta.get()) or f1
+    lote_demo = f1.strftime("%d-%m-%Y") if f1 == f2 else f"Del {f1.strftime('%d-%m-%Y')} al {f2.strftime('%d-%m-%Y')}"
+    subs = obtener_subcarpetas_xml(ejemplo_prog, f1, subcarpeta_lote=lote_demo)
+    ruta_ej = "\\".join([*subs, f"{ejemplo_prog['prefijo']} {f1.strftime('%d-%m-%Y')}.xml"])
+    lbl_ejemplo_ruta.config(text=f"Ej: ...\\{ruta_ej}")
 
 # --- Gestión del rango de fechas ---
 def establecer_rango_fechas(desde_date, hasta_date):
@@ -1126,6 +1208,7 @@ def actualizar_resumen_rango(*args):
         lbl_resumen_rango.config(text="(1 día)", fg="#2980b9")
     else:
         lbl_resumen_rango.config(text=f"({dias} días)", fg="#8e44ad")
+    actualizar_ejemplo_carpeta()
 
 def obtener_rango_fechas():
     f1 = parsear_fecha_usuario(var_desde.get())
@@ -1236,7 +1319,7 @@ def seleccionar_hasta_fecha():
     VentanaCalendario(ventana, fecha_act, al_elegir, titulo="Programar hasta el día...")
 
 # --- Ejecución de lotes en hilo secundario (Thread-Safe) ---
-def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
+def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True, subcarpeta_lote=None):
     global generacion_en_curso
     if generacion_en_curso:
         messagebox.showwarning("Ocupado", "Ya hay una generación en proceso. Espera a que termine.")
@@ -1246,13 +1329,14 @@ def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
     omitidos = 0
     for prog in lista_programas:
         for fecha_obj in lista_fechas:
-            if not sobrescribir and os.path.exists(ruta_xml_programa(prog, fecha_obj)):
+            ruta_dest = ruta_xml_programa(prog, fecha_obj, subcarpeta_lote=subcarpeta_lote)
+            if not sobrescribir and os.path.exists(ruta_dest):
                 omitidos += 1
             else:
                 tareas.append((prog, fecha_obj))
 
     if not tareas:
-        messagebox.showinfo("Sin cambios", "Todos los archivos XML del rango seleccionado ya existen en la carpeta de salida.")
+        messagebox.showinfo("Sin cambios", "Todos los archivos XML del rango seleccionado ya existen en sus carpetas.")
         return
 
     generacion_en_curso = True
@@ -1265,6 +1349,7 @@ def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
         global generacion_en_curso
         hoy = datetime.date.today()
         generados = 0
+        carpetas_creadas = set()
         errores = []
 
         try:
@@ -1276,7 +1361,8 @@ def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
                 ))
 
                 try:
-                    ejecutar_motor_universal(prog, fecha_objetivo=fecha_obj)
+                    archivo_gen = ejecutar_motor_universal(prog, fecha_objetivo=fecha_obj, subcarpeta_lote=subcarpeta_lote)
+                    carpetas_creadas.add(os.path.dirname(archivo_gen))
                     generados += 1
 
                     if fecha_obj == hoy:
@@ -1304,7 +1390,11 @@ def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
                     messagebox.showerror("Error en Generación", "\n\n".join(errores[:8]))
                 elif errores:
                     lbl_estado.config(text=f"Completado con avisos: {generados} generados, {len(errores)} errores", fg="#e67e22")
-                    resumen = f"Se generaron {generados} archivos XML.\nOmitidos (ya existían): {omitidos}\n\nErrores ({len(errores)}):\n" + "\n".join(errores[:6])
+                    resumen = (
+                        f"Se generaron {generados} archivos XML en {len(carpetas_creadas)} carpeta(s).\n"
+                        f"Omitidos: {omitidos}\n\n"
+                        f"Errores ({len(errores)}):\n" + "\n".join(errores[:6])
+                    )
                     messagebox.showwarning("Completado con Errores", resumen)
                 else:
                     hora_fin = datetime.datetime.now().strftime("%I:%M %p")
@@ -1313,9 +1403,15 @@ def lanzar_lote_generacion(lista_programas, lista_fechas, sobrescribir=True):
                     else:
                         f_ini = lista_fechas[0].strftime("%d-%m-%Y")
                         f_fin = lista_fechas[-1].strftime("%d-%m-%Y")
-                        lbl_estado.config(text=f"✔ Lote listo: {generados} XML creados ({f_ini} al {f_fin})", fg="#27ae60")
+                        lbl_estado.config(text=f"✔ Lote listo: {generados} XML en {len(carpetas_creadas)} carpeta(s) ({f_ini} al {f_fin})", fg="#27ae60")
                         extra_omit = f"\nArchivos omitidos (ya existían): {omitidos}" if omitidos > 0 else ""
-                        messagebox.showinfo("Programación Generada", f"¡Proceso completado con éxito!\n\nArchivos XML creados: {generados}{extra_omit}\nPeríodo: {f_ini} al {f_fin}")
+                        messagebox.showinfo(
+                            "Programación Generada",
+                            f"¡Proceso completado con éxito!\n\n"
+                            f"Archivos XML creados: {generados}\n"
+                            f"Carpetas utilizadas: {len(carpetas_creadas)}{extra_omit}\n"
+                            f"Período: {f_ini} al {f_fin}"
+                        )
 
             ventana.after(0, finalizar_ui)
 
@@ -1331,18 +1427,20 @@ def solicitar_ejecucion(prog, forzar=False):
         return
     f1, f2, lista_fechas = rango
     hoy = datetime.date.today()
+    subcarpeta_lote = calcular_subcarpeta_lote(lista_fechas)
 
-    # Caso rápido: Solo Hoy (comportamiento clásico de 1 clic)
     if len(lista_fechas) == 1 and f1 == hoy:
         if prog["id"] in registro_hoy and not forzar:
             hora = registro_hoy[prog["id"]]
             if not messagebox.askyesno("Aviso", f"'{prog['nombre']}' YA SE GENERÓ HOY a las {hora}.\n\n¿Volver a generar?"):
                 return
-        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True)
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True, subcarpeta_lote=subcarpeta_lote)
         return
 
-    # Caso 1 día distinto de hoy o rango multi-día
-    existentes = sum(1 for f in lista_fechas if os.path.exists(ruta_xml_programa(prog, f)))
+    existentes = sum(
+        1 for f in lista_fechas
+        if os.path.exists(ruta_xml_programa(prog, f, subcarpeta_lote=subcarpeta_lote))
+    )
     f1_str, f2_str = f1.strftime("%d-%m-%Y"), f2.strftime("%d-%m-%Y")
 
     if existentes > 0:
@@ -1350,24 +1448,24 @@ def solicitar_ejecucion(prog, forzar=False):
             "Archivos Existentes",
             f"Programa: '{prog['nombre']}'\n"
             f"Período: {f1_str} al {f2_str} ({len(lista_fechas)} día(s))\n\n"
-            f"Ya existen {existentes} archivo(s) XML en la carpeta de salida.\n\n"
+            f"Ya existen {existentes} archivo(s) XML en las carpetas de destino.\n\n"
             f"[SÍ] = Sobrescribir todos ({len(lista_fechas)} XML)\n"
             f"[NO] = Generar solo los faltantes ({len(lista_fechas) - existentes} XML)\n"
             f"[CANCELAR] = Cancelar"
         )
         if resp is None:
             return
-        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=resp)
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=resp, subcarpeta_lote=subcarpeta_lote)
     else:
         if len(lista_fechas) > 1:
             if not messagebox.askyesno(
                 "Confirmar Programación",
                 f"¿Generar '{prog['nombre']}' para {len(lista_fechas)} días?\n"
                 f"Del {f1_str} al {f2_str}\n\n"
-                f"Se crearán {len(lista_fechas)} archivos XML."
+                f"Se crearán {len(lista_fechas)} archivos XML en sus carpetas."
             ):
                 return
-        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True)
+        lanzar_lote_generacion([prog], lista_fechas, sobrescribir=True, subcarpeta_lote=subcarpeta_lote)
 
 def ejecutar_todos():
     if generacion_en_curso:
@@ -1382,8 +1480,8 @@ def ejecutar_todos():
         return
     f1, f2, lista_fechas = rango
     hoy = datetime.date.today()
+    subcarpeta_lote = calcular_subcarpeta_lote(lista_fechas)
 
-    # Caso Solo Hoy
     if len(lista_fechas) == 1 and f1 == hoy:
         pendientes = [p for p in programas_activos if p["id"] not in registro_hoy]
         if len(pendientes) < len(programas_activos):
@@ -1395,16 +1493,15 @@ def ejecutar_todos():
             if not messagebox.askyesno("Confirmar", "¿Iniciar la generación de TODOS los programas para HOY?"):
                 return
             lista_progs = programas_activos
-        lanzar_lote_generacion(lista_progs, lista_fechas, sobrescribir=True)
+        lanzar_lote_generacion(lista_progs, lista_fechas, sobrescribir=True, subcarpeta_lote=subcarpeta_lote)
         return
 
-    # Caso multi-día o fecha futura/pasada
     total_xml = len(programas_activos) * len(lista_fechas)
     existentes = sum(
         1
         for p in programas_activos
         for f in lista_fechas
-        if os.path.exists(ruta_xml_programa(p, f))
+        if os.path.exists(ruta_xml_programa(p, f, subcarpeta_lote=subcarpeta_lote))
     )
     f1_str, f2_str = f1.strftime("%d-%m-%Y"), f2.strftime("%d-%m-%Y")
 
@@ -1421,16 +1518,16 @@ def ejecutar_todos():
         )
         if resp is None:
             return
-        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=resp)
+        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=resp, subcarpeta_lote=subcarpeta_lote)
     else:
         if not messagebox.askyesno(
             "Confirmar Programación Completa",
             f"¿Generar TODOS los programas ({len(programas_activos)})?\n\n"
             f"Período: {f1_str} al {f2_str} ({len(lista_fechas)} día(s))\n"
-            f"Se crearán {total_xml} archivos XML en total."
+            f"Se crearán {total_xml} archivos XML en sus respectivas carpetas."
         ):
             return
-        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=True)
+        lanzar_lote_generacion(programas_activos, lista_fechas, sobrescribir=True, subcarpeta_lote=subcarpeta_lote)
 
 def actualizar_botones():
     for p in programas_activos:
@@ -1702,8 +1799,8 @@ def pedir_creacion_cuenta_local():
 # ==============================================================================
 ventana = tk.Tk()
 ventana.title(f"Panel Playout Generator Suite v{VERSION_LOCAL}")
-ventana.geometry("620x720")
-ventana.minsize(560, 620)
+ventana.geometry("640x740")
+ventana.minsize(580, 650)
 ventana.configure(bg="#f4f6f9")
 ventana.withdraw()
 
@@ -1729,15 +1826,34 @@ btn_sop.pack(side="right", padx=2)
 lbl_licencia_info = tk.Label(ventana, text="Licencia: Verificando...", font=("Segoe UI", 8, "bold"), bg="#f4f6f9", fg="#27ae60")
 lbl_licencia_info.pack(pady=(2, 4))
 
-# Selector de Carpeta de Salida XML
-frame_salida = tk.Frame(ventana, bg="#ecf0f1", padx=10, pady=5)
+# Selector de Carpeta de Salida XML y Organización en Subcarpetas
+frame_salida = tk.Frame(ventana, bg="#ecf0f1", padx=10, pady=6)
 frame_salida.pack(fill="x", padx=20, pady=(0, 8))
 
-tk.Label(frame_salida, text="📁 Salida XML:", font=("Segoe UI", 8, "bold"), bg="#ecf0f1", fg="#2c3e50").pack(side="left")
-lbl_salida_path = tk.Label(frame_salida, text=limpiar_ruta(config_general.get("carpeta_salida")), font=("Segoe UI", 8), bg="#ecf0f1", fg="#7f8c8d", anchor="w")
-lbl_salida_path.pack(side="left", padx=5, fill="x", expand=True)
+fila_sal_1 = tk.Frame(frame_salida, bg="#ecf0f1")
+fila_sal_1.pack(fill="x", pady=(0, 4))
 
-tk.Button(frame_salida, text="Cambiar", font=("Segoe UI", 7, "bold"), bg="#bdc3c7", relief="flat", cursor="hand2", command=cambiar_carpeta_salida).pack(side="right")
+tk.Label(fila_sal_1, text="📁 Salida XML:", font=("Segoe UI", 8, "bold"), bg="#ecf0f1", fg="#2c3e50").pack(side="left")
+lbl_salida_path = tk.Label(fila_sal_1, text=limpiar_ruta(config_general.get("carpeta_salida")), font=("Segoe UI", 8), bg="#ecf0f1", fg="#7f8c8d", anchor="w")
+lbl_salida_path.pack(side="left", padx=5, fill="x", expand=True)
+tk.Button(fila_sal_1, text="Abrir", font=("Segoe UI", 7, "bold"), bg="#95a5a6", fg="white", relief="flat", cursor="hand2", command=abrir_carpeta_salida).pack(side="right", padx=(4, 0))
+tk.Button(fila_sal_1, text="Cambiar", font=("Segoe UI", 7, "bold"), bg="#bdc3c7", relief="flat", cursor="hand2", command=cambiar_carpeta_salida).pack(side="right")
+
+fila_sal_2 = tk.Frame(frame_salida, bg="#ecf0f1")
+fila_sal_2.pack(fill="x")
+
+tk.Label(fila_sal_2, text="🗂 Organizar en:", font=("Segoe UI", 8, "bold"), bg="#ecf0f1", fg="#2c3e50").pack(side="left")
+
+modo_actual = config_general.get("modo_carpetas", "por_anio_mes_dia")
+texto_modo_inicial = dict(MODOS_CARPETAS).get(modo_actual, MODOS_CARPETAS[0][1])
+
+combo_carpetas = ttk.Combobox(fila_sal_2, values=[t for _, t in MODOS_CARPETAS], state="readonly", font=("Segoe UI", 8), width=42)
+combo_carpetas.set(texto_modo_inicial)
+combo_carpetas.pack(side="left", padx=(6, 0), fill="x", expand=True)
+combo_carpetas.bind("<<ComboboxSelected>>", al_cambiar_modo_carpetas)
+
+lbl_ejemplo_ruta = tk.Label(frame_salida, text="", font=("Segoe UI", 7, "italic"), bg="#ecf0f1", fg="#576574", anchor="w")
+lbl_ejemplo_ruta.pack(fill="x", pady=(3, 0))
 
 # Panel de Período / Rango de Fechas (Hoy, Semana, Mes, Hasta un día)
 frame_rango = tk.Frame(ventana, bg="#e8eef3", padx=10, pady=7, highlightbackground="#d0d7de", highlightthickness=1)
@@ -1787,7 +1903,7 @@ btn_all.pack(fill="x", padx=20, pady=(0, 8))
 
 tk.Frame(ventana, height=2, bg="#dcdde1").pack(fill="x", padx=20, pady=(0, 6))
 
-# Pie de ventana (empacado antes que el canvas para que nunca quede oculto)
+# Pie de ventana
 tk.Button(ventana, text="Cerrar Aplicación", font=("Segoe UI", 9), bg="#bdc3c7", fg="#2c3e50", relief="flat", cursor="hand2", command=ventana.destroy).pack(side="bottom", pady=(2, 8))
 
 lbl_estado = tk.Label(ventana, text="Listo para ejecutar", font=("Segoe UI", 9, "italic"), bg="#f4f6f9", fg="#7f8c8d")
@@ -1811,6 +1927,7 @@ canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
 
+actualizar_ejemplo_carpeta()
 reconstruir_interfaz_botones()
 
 # Iniciar validación con el servidor de licencias en la nube
