@@ -40,6 +40,9 @@ ARCHIVO_CONFIG_GLOBAL = os.path.join(BASE_DIR, "config_general.json")
 ARCHIVO_CONFIG_PROGRAMAS = os.path.join(BASE_DIR, "programas_config.json")
 ARCHIVO_REGISTRO_DIARIO = os.path.join(BASE_DIR, "registro_ejecuciones.json")
 
+# ⬇⬇⬇ NUEVO: Archivo para la estructura personalizada de carpetas
+ARCHIVO_ESTRUCTURA = os.path.join(BASE_DIR, "estructura_carpetas.json")
+
 INTENTOS_MAXIMOS = 3
 
 MESES_ES = [
@@ -48,16 +51,28 @@ MESES_ES = [
 ]
 DIAS_CORTOS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
+# ==============================================================================
+# MODOS DE ORGANIZACIÓN EN CARPETAS
+# ==============================================================================
+# Se agregaron:
+#   - por_programa_dia  -> Programa\23-11-2026
+#   - por_anio_solo     -> 2026
+#   - por_mes_solo      -> 11 - Noviembre 2026
+#   - personalizado     -> Usa la plantilla editable de estructura_carpetas.json
 MODOS_CARPETAS = [
     ("por_anio_mes_dia", "Por Año / Mes / Día (2026\\11 - Noviembre\\2026-11-23)"),
-    ("por_fecha_iso", "Por Fecha Año-Mes-Día (2026-11-23)"),
-    ("por_dia", "Por Día (23-11-2026)"),
-    ("por_dia_nombre", "Por Día con Nombre (Lun 23-11-2026)"),
-    ("por_mes_dia", "Por Mes y Día (11 - Noviembre 2026\\23-11-2026)"),
-    ("por_programa", "Por Programa (Sentir Llanero)"),
+    ("por_fecha_iso",    "Por Fecha Año-Mes-Día (2026-11-23)"),
+    ("por_dia",          "Por Día (23-11-2026)"),
+    ("por_dia_nombre",   "Por Día con Nombre (Lun 23-11-2026)"),
+    ("por_mes_dia",      "Por Mes y Día (11 - Noviembre 2026\\23-11-2026)"),
+    ("por_programa",     "Por Programa (Sentir Llanero)"),
     ("por_programa_mes", "Por Programa y Mes (Sentir Llanero\\11 - Noviembre 2026)"),
-    ("por_rango", "Por Período / Lote (Del 23-11 al 29-11-2026)"),
-    ("sin_subcarpetas", "Sin subcarpetas (Todo en la raíz)")
+    ("por_programa_dia", "Por Programa y Día (Sentir Llanero\\23-11-2026)"),
+    ("por_rango",        "Por Período / Lote (Del 23-11 al 29-11-2026)"),
+    ("por_anio_solo",    "Solo Año (2026)"),
+    ("por_mes_solo",     "Solo Mes (11 - Noviembre 2026)"),
+    ("sin_subcarpetas",  "Sin subcarpetas (Todo en la raíz)"),
+    ("personalizado",    "⚙ Personalizado (Editable)..."),
 ]
 
 # Datos remotos cargados dinámicamente desde Google Sheets
@@ -70,7 +85,6 @@ datos_remotos = {
     "url_descarga": "",
     "notas_actualizacion": ""
 }
-
 # ==============================================================================
 # UTILIDADES DE RUTAS, FECHAS, HUELLA HARDWARE Y CRIPTOGRAFÍA
 # ==============================================================================
@@ -79,8 +93,8 @@ def calcular_hash(texto):
 
 def limpiar_ruta(texto):
     """
-    Elimina comillas, espacios y convierte TODAS las barras / a formato Windows \\.
-    Garantiza que las rutas de red UNC siempre comiencen con \\\\ y nunca con //.
+    Elimina comillas, espacios y convierte TODAS las barras / a formato Windows \.
+    Garantiza que las rutas de red UNC siempre comiencen con \\ y nunca con //.
     """
     if not texto:
         return ""
@@ -154,7 +168,6 @@ def ultimo_dia_del_mes(anio, mes):
     """Retorna el último día (datetime.date) de un mes/año dado."""
     _, num_dias = calendar.monthrange(anio, mes)
     return datetime.date(anio, mes, num_dias)
-
 # ==============================================================================
 # CONFIGURACIÓN GENERAL (CARPETA DE SALIDA XML Y ORGANIZACIÓN)
 # ==============================================================================
@@ -178,7 +191,7 @@ def guardar_config_general(cfg):
 config_general = cargar_config_general()
 
 # ==============================================================================
-# PLANTILLAS POR DEFECTO
+# PLANTILLAS POR DEFECTO (5 PROGRAMAS DE FÁBRICA)
 # ==============================================================================
 def obtener_programas_por_defecto():
     logo = r"\\aire2\BASE DE DATOS 2022\ESCUDERIA 2022\ESCUDERIA\BTV LOGO MUSICALIZADO 2020\BTV LOGO MUSICALIZADO 2020.mpg"
@@ -311,7 +324,6 @@ def obtener_programas_por_defecto():
             ]
         }
     ]
-
 # ==============================================================================
 # CARGA Y GUARDADO CON AUTO-REPARACIÓN DE BARRAS
 # ==============================================================================
@@ -420,8 +432,7 @@ del "%~f0"
             ventana.after(0, lambda err=e: (messagebox.showerror("Error", f"Fallo al actualizar:\n{err}"), win_upd.destroy()))
 
     threading.Thread(target=tarea_descarga, daemon=True).start()
-
-# ==============================================================================
+    # ==============================================================================
 # MOTOR UNIVERSAL XML (IPO) CON ORGANIZACIÓN EN SUBCARPETAS
 # ==============================================================================
 def recolectar_archivos(ruta_carpeta):
@@ -454,8 +465,75 @@ def calcular_subcarpeta_lote(lista_fechas):
         return f1.strftime("%d-%m-%Y")
     return f"Del {f1.strftime('%d-%m-%Y')} al {f2.strftime('%d-%m-%Y')}"
 
+# ==============================================================================
+# ESTRUCTURA PERSONALIZADA POR BLOQUES
+# ==============================================================================
+def cargar_estructura_personalizada():
+    """Carga la plantilla de bloques desde estructura_carpetas.json."""
+    default = [
+        {"tipo": "anio"},      # 2026
+        {"tipo": "mes_num"},   # 11
+        {"tipo": "dia"},       # 23-11-2026
+    ]
+    if os.path.exists(ARCHIVO_ESTRUCTURA):
+        try:
+            with open(ARCHIVO_ESTRUCTURA, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list) and data:
+                    return data
+        except Exception:
+            pass
+    return default
+
+def guardar_estructura_personalizada(bloques):
+    with open(ARCHIVO_ESTRUCTURA, "w", encoding="utf-8") as f:
+        json.dump(bloques, f, indent=4, ensure_ascii=False)
+
+def construir_ruta_desde_bloques(bloques, prog, fecha_objetivo, subcarpeta_lote=None):
+    """
+    Convierte la lista de bloques en una lista de nombres de subcarpetas.
+    Cada bloque -> una subcarpeta (o se omite si produce valor vacío).
+    """
+    partes = []
+    for bloque in bloques:
+        tipo = bloque.get("tipo")
+        valor = ""
+
+        if tipo == "anio":
+            valor = str(fecha_objetivo.year)
+        elif tipo == "mes_num":
+            valor = f"{fecha_objetivo.month:02d}"
+        elif tipo == "mes_nombre":
+            valor = MESES_ES[fecha_objetivo.month]
+        elif tipo == "mes_completo":
+            valor = f"{fecha_objetivo.month:02d} - {MESES_ES[fecha_objetivo.month]} {fecha_objetivo.year}"
+        elif tipo == "dia":
+            valor = fecha_objetivo.strftime("%d-%m-%Y")
+        elif tipo == "dia_iso":
+            valor = fecha_objetivo.strftime("%Y-%m-%d")
+        elif tipo == "dia_nombre":
+            valor = f"{DIAS_CORTOS_ES[fecha_objetivo.weekday()]} {fecha_objetivo.strftime('%d-%m-%Y')}"
+        elif tipo == "programa":
+            valor = limpiar_nombre_carpeta(prog.get("nombre", "Programa"))
+        elif tipo == "prefijo":
+            valor = limpiar_nombre_carpeta(prog.get("prefijo", "xml"))
+        elif tipo == "rango":
+            valor = subcarpeta_lote or fecha_objetivo.strftime("%d-%m-%Y")
+        elif tipo == "texto":
+            valor = bloque.get("valor", "").strip()
+
+        if valor:
+            partes.append(limpiar_nombre_carpeta(valor))
+    return partes
+
+# ==============================================================================
+# OBTENCIÓN DE SUBCARPETAS (TODOS LOS MODOS, INCLUYENDO PERSONALIZADO)
+# ==============================================================================
 def obtener_subcarpetas_xml(prog, fecha_objetivo, subcarpeta_lote=None):
-    """Retorna la lista de subcarpetas según el modo de organización elegido."""
+    """
+    Retorna la lista de subcarpetas según el modo de organización elegido.
+    Incluye el modo 'personalizado' que usa estructura_carpetas.json.
+    """
     modo = config_general.get("modo_carpetas", "por_anio_mes_dia")
     fecha_str = fecha_objetivo.strftime("%d-%m-%Y")
     fecha_iso = fecha_objetivo.strftime("%Y-%m-%d")
@@ -481,11 +559,24 @@ def obtener_subcarpetas_xml(prog, fecha_objetivo, subcarpeta_lote=None):
         return [carpeta_prog]
     elif modo == "por_programa_mes":
         return [carpeta_prog, carpeta_mes]
+    elif modo == "por_programa_dia":
+        return [carpeta_prog, fecha_str]
     elif modo == "por_rango":
         return [subcarpeta_lote or fecha_str]
+    elif modo == "por_anio_solo":
+        return [str(fecha_objetivo.year)]
+    elif modo == "por_mes_solo":
+        return [carpeta_mes]
+    elif modo == "personalizado":
+        bloques = cargar_estructura_personalizada()
+        return construir_ruta_desde_bloques(bloques, prog, fecha_objetivo, subcarpeta_lote)
     else:
+        # sin_subcarpetas u otro no contemplado
         return []
 
+# ==============================================================================
+# RUTA FINAL DEL XML
+# ==============================================================================
 def ruta_xml_programa(prog, fecha_objetivo=None, subcarpeta_lote=None):
     if fecha_objetivo is None:
         fecha_objetivo = datetime.date.today()
@@ -495,6 +586,9 @@ def ruta_xml_programa(prog, fecha_objetivo=None, subcarpeta_lote=None):
     nombre_archivo = f"{prog['prefijo']} {fecha_str}.xml"
     return limpiar_ruta(os.path.join(carpeta_base, *subcarpetas, nombre_archivo))
 
+# ==============================================================================
+# EJECUCIÓN DEL MOTOR (GENERACIÓN DEL XML)
+# ==============================================================================
 def ejecutar_motor_universal(prog, fecha_objetivo=None, subcarpeta_lote=None):
     if fecha_objetivo is None:
         fecha_objetivo = datetime.date.today()
@@ -567,7 +661,6 @@ def ejecutar_motor_universal(prog, fecha_objetivo=None, subcarpeta_lote=None):
     ET.indent(tree, space="\t", level=0)
     tree.write(archivo_salida, encoding='cp1252', xml_declaration=False)
     return archivo_salida
-
 # ==============================================================================
 # CALENDARIO VISUAL EN TKINTER PURO (SIN DEPENDENCIAS EXTERNAS)
 # ==============================================================================
@@ -651,13 +744,8 @@ class VentanaCalendario(tk.Toplevel):
                     self.frame_grid,
                     text=str(fecha_dia.day),
                     font=("Segoe UI", 9, "bold" if fecha_dia in (hoy, self.fecha_sel) else "normal"),
-                    bg=bg,
-                    fg=fg,
-                    activebackground="#3498db",
-                    activeforeground="white",
-                    relief="flat",
-                    width=4,
-                    cursor="hand2",
+                    bg=bg, fg=fg, activebackground="#3498db", activeforeground="white",
+                    relief="flat", width=4, cursor="hand2",
                     command=lambda f=fecha_dia: self.seleccionar_dia(f)
                 )
                 btn.grid(row=fila_idx, column=col_idx, padx=1, pady=1)
@@ -1142,6 +1230,204 @@ def abrir_soporte_tecnico():
     tk.Label(frame_guia, text="3. Presiona el programa (o Ejecutar Todos) y cárgalo en Insta Playout.", font=("Segoe UI", 8), fg="#bdc3c7", bg="#2c3e50").pack(anchor="w")
 
 # ==============================================================================
+# ⚙ EDITOR DE ESTRUCTURA PERSONALIZADA (BLOQUES)  🆕 NUEVO
+# ==============================================================================
+class VentanaEditorEstructura(tk.Toplevel):
+    TIPOS_BLOQUE = [
+        ("anio",         "Año (2026)"),
+        ("mes_num",      "Mes número (11)"),
+        ("mes_nombre",   "Nombre de mes (Noviembre)"),
+        ("mes_completo", "Mes completo (11 - Noviembre 2026)"),
+        ("dia",          "Día (23-11-2026)"),
+        ("dia_iso",      "Día ISO (2026-11-23)"),
+        ("dia_nombre",   "Día con nombre (Lun 23-11-2026)"),
+        ("programa",     "Nombre del Programa"),
+        ("prefijo",      "Prefijo del XML"),
+        ("rango",        "Rango de fechas (lote)"),
+        ("texto",        "Texto libre..."),
+    ]
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Personalizar Estructura de Carpetas")
+        self.geometry("640x540")
+        self.configure(bg="#2c3e50")
+        self.transient(parent)
+        self.grab_set()
+
+        self.bloques = cargar_estructura_personalizada()
+
+        tk.Label(self, text="⚙ Estructura de Carpetas Personalizada",
+                 font=("Segoe UI", 13, "bold"), fg="#f1c40f", bg="#2c3e50").pack(pady=10)
+        tk.Label(self, text="Cada bloque = una subcarpeta. Ordena de arriba hacia abajo.",
+                 font=("Segoe UI", 9), fg="#bdc3c7", bg="#2c3e50").pack()
+
+        frame_central = tk.Frame(self, bg="#2c3e50")
+        frame_central.pack(fill="both", expand=True, padx=15, pady=10)
+
+        # Lista de bloques
+        frame_lista = tk.Frame(frame_central)
+        frame_lista.pack(side="left", fill="both", expand=True)
+
+        self.listbox = tk.Listbox(frame_lista, font=("Segoe UI", 10),
+                                  bg="#34495e", fg="white", selectbackground="#2980b9")
+        self.listbox.pack(fill="both", expand=True)
+
+        # Botonera
+        frame_btns = tk.Frame(frame_central, bg="#2c3e50")
+        frame_btns.pack(side="left", fill="y", padx=(8, 0))
+
+        tk.Button(frame_btns, text="⬆ Subir", width=16, bg="#34495e", fg="white",
+                  relief="flat", command=self.subir).pack(pady=2)
+        tk.Button(frame_btns, text="⬇ Bajar", width=16, bg="#34495e", fg="white",
+                  relief="flat", command=self.bajar).pack(pady=2)
+        tk.Button(frame_btns, text="🗑 Quitar", width=16, bg="#c0392b", fg="white",
+                  relief="flat", command=self.quitar).pack(pady=2)
+        tk.Button(frame_btns, text="✏ Editar texto", width=16, bg="#d35400", fg="white",
+                  relief="flat", command=self.editar_texto).pack(pady=10)
+
+        tk.Label(frame_btns, text="Agregar bloque:",
+                 font=("Segoe UI", 8, "bold"), fg="#bdc3c7", bg="#2c3e50").pack(pady=(10, 2))
+        self.combo_tipo = ttk.Combobox(frame_btns, state="readonly", width=24,
+                                       values=[t[1] for t in self.TIPOS_BLOQUE])
+        self.combo_tipo.current(0)
+        self.combo_tipo.pack(pady=2)
+        tk.Button(frame_btns, text="➕ Agregar", width=16, bg="#27ae60", fg="white",
+                  relief="flat", command=self.agregar).pack(pady=2)
+
+        # Vista previa
+        frame_prev = tk.Frame(self, bg="#1a252f", padx=10, pady=8)
+        frame_prev.pack(fill="x", padx=15, pady=(0, 10))
+        tk.Label(frame_prev, text="👁 Vista previa (ejemplo con fecha de hoy):",
+                 font=("Segoe UI", 8, "bold"), fg="#f1c40f", bg="#1a252f").pack(anchor="w")
+        self.lbl_preview = tk.Label(frame_prev, text="", font=("Consolas", 8),
+                                    fg="#2ecc71", bg="#1a252f", anchor="w", justify="left", wraplength=580)
+        self.lbl_preview.pack(fill="x")
+
+        # Botones finales
+        frame_fin = tk.Frame(self, bg="#2c3e50")
+        frame_fin.pack(fill="x", padx=15, pady=(0, 10))
+        tk.Button(frame_fin, text="♻ Restaurar por defecto", bg="#7f8c8d", fg="white",
+                  relief="flat", command=self.restaurar).pack(side="left")
+        tk.Button(frame_fin, text="💾 GUARDAR", bg="#27ae60", fg="white",
+                  font=("Segoe UI", 10, "bold"), relief="flat",
+                  command=self.guardar).pack(side="right")
+
+        self.refrescar()
+
+    def refrescar(self):
+        self.listbox.delete(0, tk.END)
+        etiquetas = dict(self.TIPOS_BLOQUE)
+        for b in self.bloques:
+            t = b.get("tipo")
+            if t == "texto":
+                self.listbox.insert(tk.END, f"TEXTO → \"{b.get('valor', '')}\"")
+            else:
+                self.listbox.insert(tk.END, etiquetas.get(t, t))
+        self.actualizar_preview()
+
+    def actualizar_preview(self):
+        prog_demo = {"nombre": "Sentir Llanero", "prefijo": "3.-sentir llanero"}
+        hoy = datetime.date.today()
+        partes = construir_ruta_desde_bloques(
+            self.bloques, prog_demo, hoy,
+            subcarpeta_lote="Del 23-11-2026 al 29-11-2026"
+        )
+        if partes:
+            ruta = "\\".join(partes)
+        else:
+            ruta = "(raíz, sin subcarpetas)"
+        self.lbl_preview.config(
+            text=f"...\\{ruta}\\{prog_demo['prefijo']} {hoy.strftime('%d-%m-%Y')}.xml"
+        )
+
+    def agregar(self):
+        idx = self.combo_tipo.current()
+        if idx < 0:
+            return
+        tipo = self.TIPOS_BLOQUE[idx][0]
+        nuevo = {"tipo": tipo}
+        if tipo == "texto":
+            txt = simpledialog.askstring("Texto libre",
+                                         "Escribe el nombre de la carpeta:",
+                                         parent=self)
+            if not txt:
+                return
+            nuevo["valor"] = txt
+        self.bloques.append(nuevo)
+        self.refrescar()
+
+    def subir(self):
+        sel = self.listbox.curselection()
+        if not sel or sel[0] == 0:
+            return
+        i = sel[0]
+        self.bloques[i - 1], self.bloques[i] = self.bloques[i], self.bloques[i - 1]
+        self.refrescar()
+        self.listbox.selection_set(i - 1)
+
+    def bajar(self):
+        sel = self.listbox.curselection()
+        if not sel or sel[0] >= len(self.bloques) - 1:
+            return
+        i = sel[0]
+        self.bloques[i + 1], self.bloques[i] = self.bloques[i], self.bloques[i + 1]
+        self.refrescar()
+        self.listbox.selection_set(i + 1)
+
+    def quitar(self):
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        del self.bloques[sel[0]]
+        self.refrescar()
+
+    def editar_texto(self):
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        i = sel[0]
+        if self.bloques[i].get("tipo") != "texto":
+            messagebox.showinfo("Solo texto",
+                                "Solo los bloques de tipo 'Texto libre' se pueden editar.",
+                                parent=self)
+            return
+        nuevo = simpledialog.askstring("Editar texto", "Nuevo valor:",
+                                       initialvalue=self.bloques[i].get("valor", ""),
+                                       parent=self)
+        if nuevo is not None:
+            self.bloques[i]["valor"] = nuevo
+            self.refrescar()
+
+    def restaurar(self):
+        if messagebox.askyesno("Restaurar",
+                               "¿Restaurar estructura por defecto (Año / Mes / Día)?",
+                               parent=self):
+            self.bloques = [
+                {"tipo": "anio"},
+                {"tipo": "mes_num"},
+                {"tipo": "dia"},
+            ]
+            self.refrescar()
+
+    def guardar(self):
+        if not self.bloques:
+            if not messagebox.askyesno(
+                "Sin bloques",
+                "No hay bloques definidos. ¿Guardar de todos modos?\n"
+                "(Los XML se generarán en la raíz, sin subcarpetas.)",
+                parent=self
+            ):
+                return
+        guardar_estructura_personalizada(self.bloques)
+        messagebox.showinfo(
+            "Guardado",
+            "Estructura personalizada guardada.\n"
+            "Selecciona '⚙ Personalizado' en el desplegable para usarla.",
+            parent=self
+        )
+        self.destroy()
+        # ==============================================================================
 # PANEL PRINCIPAL Y LÓGICA DE PROGRAMACIÓN MULTI-DÍA
 # ==============================================================================
 programas_activos = cargar_programas()
@@ -1174,6 +1460,9 @@ def al_cambiar_modo_carpetas(event=None):
         if texto == etiqueta:
             config_general["modo_carpetas"] = clave
             guardar_config_general(config_general)
+            # Si el usuario elige "personalizado", abrimos el editor automáticamente
+            if clave == "personalizado":
+                VentanaEditorEstructura(ventana)
             break
     actualizar_ejemplo_carpeta()
 
@@ -1852,6 +2141,14 @@ combo_carpetas.set(texto_modo_inicial)
 combo_carpetas.pack(side="left", padx=(6, 0), fill="x", expand=True)
 combo_carpetas.bind("<<ComboboxSelected>>", al_cambiar_modo_carpetas)
 
+# ⬇⬇⬇ NUEVO: Botón para abrir el editor de estructura personalizada
+btn_personalizar = tk.Button(
+    fila_sal_2, text="⚙ Personalizar", font=("Segoe UI", 7, "bold"),
+    bg="#8e44ad", fg="white", relief="flat", cursor="hand2",
+    command=lambda: VentanaEditorEstructura(ventana)
+)
+btn_personalizar.pack(side="left", padx=(4, 0))
+
 lbl_ejemplo_ruta = tk.Label(frame_salida, text="", font=("Segoe UI", 7, "italic"), bg="#ecf0f1", fg="#576574", anchor="w")
 lbl_ejemplo_ruta.pack(fill="x", pady=(3, 0))
 
@@ -1864,72 +2161,77 @@ fila_presets.pack(fill="x", pady=(0, 5))
 
 tk.Label(fila_presets, text="📅 Período:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#2c3e50").pack(side="left", padx=(0, 6))
 
-tk.Button(fila_presets, text="Hoy", font=("Segoe UI", 8, "bold"), bg="#27ae60", fg="white", relief="flat", cursor="hand2", padx=8, command=preset_hoy).pack(side="left", padx=2)
+tk.Button(fila_presets, text="Hoy", font=("Segoe UI", 8, "bold"), bg="#27ae60", fg="white", relief="flat", cursor="hand2", command=preset_hoy).pack(side="left", padx=1)
+btn_sem = tk.Button(fila_presets, text="Semana ▾", font=("Segoe UI", 8, "bold"), bg="#2980b9", fg="white", relief="flat", cursor="hand2")
+btn_sem.pack(side="left", padx=1)
+btn_sem.bind("<Button-1>", abrir_menu_semana)
+btn_mes = tk.Button(fila_presets, text="Mes ▾", font=("Segoe UI", 8, "bold"), bg="#2980b9", fg="white", relief="flat", cursor="hand2")
+btn_mes.pack(side="left", padx=1)
+btn_mes.bind("<Button-1>", abrir_menu_mes)
 
-btn_sem = tk.Button(fila_presets, text="Toda la Semana ▾", font=("Segoe UI", 8, "bold"), bg="#2980b9", fg="white", relief="flat", cursor="hand2", padx=8, command=abrir_menu_semana)
-btn_sem.pack(side="left", padx=2)
-
-btn_mes = tk.Button(fila_presets, text="Todo el Mes ▾", font=("Segoe UI", 8, "bold"), bg="#8e44ad", fg="white", relief="flat", cursor="hand2", padx=8, command=abrir_menu_mes)
-btn_mes.pack(side="left", padx=2)
-
-tk.Button(fila_presets, text="🎯 Hasta el día...", font=("Segoe UI", 8, "bold"), bg="#d35400", fg="white", relief="flat", cursor="hand2", padx=8, command=seleccionar_hasta_fecha).pack(side="left", padx=2)
+lbl_resumen_rango = tk.Label(fila_presets, text="(1 día)", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#27ae60")
+lbl_resumen_rango.pack(side="right")
 
 fila_fechas = tk.Frame(frame_rango, bg="#e8eef3")
 fila_fechas.pack(fill="x")
 
-hoy_str = datetime.date.today().strftime("%d-%m-%Y")
-var_desde = tk.StringVar(value=hoy_str)
-var_hasta = tk.StringVar(value=hoy_str)
-
-tk.Label(fila_fechas, text="Desde:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#34495e").pack(side="left")
-entry_desde = tk.Entry(fila_fechas, textvariable=var_desde, font=("Segoe UI", 9), width=11, justify="center")
-entry_desde.pack(side="left", padx=(4, 2))
-tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=lambda: seleccionar_fecha_campo(True)).pack(side="left", padx=(0, 10))
-
-tk.Label(fila_fechas, text="Hasta:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#34495e").pack(side="left")
-entry_hasta = tk.Entry(fila_fechas, textvariable=var_hasta, font=("Segoe UI", 9), width=11, justify="center")
-entry_hasta.pack(side="left", padx=(4, 2))
-tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=lambda: seleccionar_fecha_campo(False)).pack(side="left", padx=(0, 8))
-
-lbl_resumen_rango = tk.Label(fila_fechas, text="(Solo Hoy - 1 día)", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#27ae60")
-lbl_resumen_rango.pack(side="right")
-
+tk.Label(fila_fechas, text="Desde:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#2c3e50").pack(side="left")
+var_desde = tk.StringVar()
 var_desde.trace_add("write", actualizar_resumen_rango)
+entry_desde = tk.Entry(fila_fechas, textvariable=var_desde, font=("Segoe UI", 9), width=12, justify="center")
+entry_desde.pack(side="left", padx=(4, 2))
+tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=lambda: seleccionar_fecha_campo(True)).pack(side="left")
+
+tk.Label(fila_fechas, text="Hasta:", font=("Segoe UI", 8, "bold"), bg="#e8eef3", fg="#2c3e50").pack(side="left", padx=(10, 0))
+var_hasta = tk.StringVar()
 var_hasta.trace_add("write", actualizar_resumen_rango)
+entry_hasta = tk.Entry(fila_fechas, textvariable=var_hasta, font=("Segoe UI", 9), width=12, justify="center")
+entry_hasta.pack(side="left", padx=(4, 2))
+tk.Button(fila_fechas, text="📅", font=("Segoe UI", 8), bg="#bdc3c7", relief="flat", cursor="hand2", command=seleccionar_hasta_fecha).pack(side="left")
 
-# Botón Ejecutar Todos
-btn_all = tk.Button(ventana, text="⚡ EJECUTAR TODOS LOS PROGRAMAS", font=("Segoe UI", 11, "bold"), bg="#8e44ad", fg="white", relief="flat", cursor="hand2", height=2, command=ejecutar_todos)
-btn_all.pack(fill="x", padx=20, pady=(0, 8))
+hoy_ini = datetime.date.today()
+var_desde.set(hoy_ini.strftime("%d-%m-%Y"))
+var_hasta.set(hoy_ini.strftime("%d-%m-%Y"))
 
-tk.Frame(ventana, height=2, bg="#dcdde1").pack(fill="x", padx=20, pady=(0, 6))
-
-# Pie de ventana
-tk.Button(ventana, text="Cerrar Aplicación", font=("Segoe UI", 9), bg="#bdc3c7", fg="#2c3e50", relief="flat", cursor="hand2", command=ventana.destroy).pack(side="bottom", pady=(2, 8))
-
-lbl_estado = tk.Label(ventana, text="Listo para ejecutar", font=("Segoe UI", 9, "italic"), bg="#f4f6f9", fg="#7f8c8d")
-lbl_estado.pack(side="bottom", pady=3)
+# Estado
+lbl_estado = tk.Label(ventana, text="Listo para generar contenido.", font=("Segoe UI", 9, "bold"), bg="#f4f6f9", fg="#7f8c8d")
+lbl_estado.pack(side="bottom", fill="x", padx=20, pady=(4, 8))
 
 progress_lote = ttk.Progressbar(ventana, mode="determinate")
 
-# Lista desplazable de programas
-frame_lista = tk.Frame(ventana, bg="#f4f6f9")
-frame_lista.pack(side="top", fill="both", expand=True, padx=(20, 10))
+# Panel scrolleable de programas
+frame_scroll_cont = tk.Frame(ventana, bg="#f4f6f9")
+frame_scroll_cont.pack(fill="both", expand=True, padx=20, pady=(0, 4))
 
-canvas = tk.Canvas(frame_lista, bg="#f4f6f9", highlightthickness=0)
-scrollbar = ttk.Scrollbar(frame_lista, orient="vertical", command=canvas.yview)
-frame_scroll = tk.Frame(canvas, bg="#f4f6f9")
+canvas_scroll = tk.Canvas(frame_scroll_cont, bg="#f4f6f9", highlightthickness=0)
+scroll_y = ttk.Scrollbar(frame_scroll_cont, orient="vertical", command=canvas_scroll.yview)
+frame_scroll = tk.Frame(canvas_scroll, bg="#f4f6f9")
 
-frame_scroll.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-canvas_window = canvas.create_window((0, 0), window=frame_scroll, anchor="nw")
-canvas.bind('<Configure>', lambda event: canvas.itemconfig(canvas_window, width=event.width))
-canvas.configure(yscrollcommand=scrollbar.set)
+frame_scroll.bind(
+    "<Configure>",
+    lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all"))
+)
+canvas_scroll.create_window((0, 0), window=frame_scroll, anchor="nw", width=560)
+canvas_scroll.configure(yscrollcommand=scroll_y.set)
+canvas_scroll.pack(side="left", fill="both", expand=True)
+scroll_y.pack(side="right", fill="y")
 
-canvas.pack(side="left", fill="both", expand=True)
-scrollbar.pack(side="right", fill="y")
+# Botón "Generar Todos"
+frame_bot_all = tk.Frame(ventana, bg="#f4f6f9")
+frame_bot_all.pack(fill="x", padx=20, pady=(2, 6))
 
-actualizar_ejemplo_carpeta()
+btn_all = tk.Button(
+    frame_bot_all, text="🚀 GENERAR TODOS LOS PROGRAMAS", font=("Segoe UI", 11, "bold"),
+    bg="#c0392b", fg="white", relief="flat", cursor="hand2", height=2,
+    command=ejecutar_todos
+)
+btn_all.pack(fill="x")
+
+# Construir botones iniciales y ejemplo
 reconstruir_interfaz_botones()
+actualizar_ejemplo_carpeta()
 
-# Iniciar validación con el servidor de licencias en la nube
+# Arrancar flujo de licenciamiento
 iniciar_flujo_licenciamiento()
+
 ventana.mainloop()
